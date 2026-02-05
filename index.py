@@ -103,8 +103,15 @@ with col1:
         # Actualizar lista sin hacer rerun
         st.session_state.recordings = recorder.get_recordings_list()
         
-        st.success(f"✅ Archivo guardado: {filename}")
-        st.toast("📁 Archivo cargado exitosamente", icon="✨")
+        # Efecto visual moderno
+        col_msg = st.columns([1, 2, 1])[1]
+        with col_msg:
+            st.markdown(f"""
+            <div class="success-pulse">
+                ✨ Archivo '{filename}' cargado exitosamente
+            </div>
+            """, unsafe_allow_html=True)
+        st.toast("📁 Archivo cargado", icon="✨")
 
 with col2:
     st.header("📂 Audios Guardados")
