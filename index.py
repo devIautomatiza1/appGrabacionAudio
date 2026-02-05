@@ -67,18 +67,18 @@ chat_model = Model.Model()
 opp_manager = OpportunitiesManager.OpportunitiesManager()
 
 # Inicializar estado de sesión
-if "last_audio_hash" not in st.session_state:
-    st.session_state.last_audio_hash = None
+if "processed_audios" not in st.session_state:
+    st.session_state.processed_audios = set()  # Audios ya procesados
 if "recordings" not in st.session_state:
     st.session_state.recordings = recorder.get_recordings_list()
-if "is_processing_audio" not in st.session_state:
-    st.session_state.is_processing_audio = False
-if "last_upload_hash" not in st.session_state:
-    st.session_state.last_upload_hash = None
 if "is_deleting" not in st.session_state:
     st.session_state.is_deleting = False
-if "audio_hashes" not in st.session_state:
-    st.session_state.audio_hashes = set()  # Track processed audio hashes
+if "selected_audio" not in st.session_state:
+    st.session_state.selected_audio = None
+if "upload_key_counter" not in st.session_state:
+    st.session_state.upload_key_counter = 0
+if "record_key_counter" not in st.session_state:
+    st.session_state.record_key_counter = 0
 
 st.title("Sistema Control Audio Iprevencion")
 
@@ -92,75 +92,73 @@ with col1:
     st.subheader("Grabadora en vivo")
     st.caption("Graba directamente desde tu micrófono (sin interrupciones)")
     
-    audio_data = st.audio_input("Presiona el botón para grabar:")
+    audio_data = st.audio_input("Presiona el botón para grabar:", key=f"audio_recorder_{st.session_state.record_key_counter}")
     
-    # Procesar audio grabado SOLO UNA VEZ
-    if audio_data is not None and not st.session_state.is_processing_audio:
+    # Procesar audio grabado SOLO UNA VEZ por hash
+    if audio_data is not None:
         audio_bytes = audio_data.getvalue()
-        audio_hash = hashlib.md5(audio_bytes).hexdigest()
-        
-        # Verificar: ¿Es un audio que ya procesamos?
-        if audio_hash not in st.session_state.audio_hashes and len(audio_bytes) > 0:
-            st.session_state.is_processing_audio = True
+        if len(audio_bytes) > 0:
+            audio_hash = hashlib.md5(audio_bytes).hexdigest()
             
-            try:
-                # Guardar el audio grabado
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"recording_{timestamp}.wav"
-                filepath = recorder.save_recording(audio_bytes, filename)
-                
-                # Guardar en Supabase
-                recording_id = db_utils.save_recording_to_db(filename, filepath)
-                
-                # Marcar este audio como procesado
-                st.session_state.audio_hashes.add(audio_hash)
-                
-                # Actualizar lista - CLAVE: sincronizar ahora
-                st.session_state.recordings = recorder.get_recordings_list()
-                
-                st.success(f"✅ Audio '{filename}' grabado y guardado")
-                st.session_state.is_processing_audio = False
-                # NO hacer rerun() aquí - solo actualizar session state
-                
-            except Exception as e:
-                st.error(f"❌ Error al grabar: {str(e)}")
-                st.session_state.is_processing_audio = False
+            # Verificar: ¿Es un audio que ya procesamos?
+            if audio_hash not in st.session_state.processed_audios:
+                try:
+                    # Guardar el audio grabado
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"recording_{timestamp}.wav"
+                    filepath = recorder.save_recording(audio_bytes, filename)
+                    
+                    # Guardar en Supabase
+                    recording_id = db_utils.save_recording_to_db(filename, filepath)
+                    
+                    # CLAVE: Marcar como procesado ANTES de mostrar mensaje
+                    st.session_state.processed_audios.add(audio_hash)
+                    
+                    # Actualizar lista
+                    st.session_state.recordings = recorder.get_recordings_list()
+                    
+                    st.success(f"✅ Audio '{filename}' grabado y guardado")
+                    
+                    # Reset el widget para que no se procese nuevamente
+                    st.session_state.record_key_counter += 1
+                    
+                except Exception as e:
+                    st.error(f"❌ Error al grabar: {str(e)}")
     
     st.divider()
     
     # Opción de subir archivo
     st.markdown('<span class="badge badge-upload">SUBIR</span>', unsafe_allow_html=True)
     st.header("Sube un archivo de audio")
-    uploaded_file = st.file_uploader("Selecciona un archivo de audio", type=["mp3", "wav", "m4a", "ogg", "flac", "webm"], key="audio_uploader")
+    uploaded_file = st.file_uploader("Selecciona un archivo de audio", type=["mp3", "wav", "m4a", "ogg", "flac", "webm"], key=f"audio_uploader_{st.session_state.upload_key_counter}")
     
-    if uploaded_file is not None and not st.session_state.is_processing_audio:
+    if uploaded_file is not None:
         audio_bytes = uploaded_file.read()
-        audio_hash = hashlib.md5(audio_bytes).hexdigest()
-        
-        # Verificar: ¿Es un archivo que ya procesamos?
-        if audio_hash not in st.session_state.audio_hashes and len(audio_bytes) > 0:
-            st.session_state.is_processing_audio = True
+        if len(audio_bytes) > 0:
+            audio_hash = hashlib.md5(audio_bytes).hexdigest()
             
-            try:
-                filename = uploaded_file.name
-                filepath = recorder.save_recording(audio_bytes, filename)
-                
-                # Guardar en Supabase
-                recording_id = db_utils.save_recording_to_db(filename, filepath)
-                
-                # Marcar este archivo como procesado
-                st.session_state.audio_hashes.add(audio_hash)
-                
-                # Actualizar lista - CLAVE: sincronizar ahora
-                st.session_state.recordings = recorder.get_recordings_list()
-                
-                st.success(f"✅ Archivo '{filename}' cargado y guardado")
-                st.session_state.is_processing_audio = False
-                # NO hacer rerun() aquí - solo actualizar session state
-                
-            except Exception as e:
-                st.error(f"❌ Error al cargar: {str(e)}")
-                st.session_state.is_processing_audio = False
+            # Verificar: ¿Es un archivo que ya procesamos?
+            if audio_hash not in st.session_state.processed_audios:
+                try:
+                    filename = uploaded_file.name
+                    filepath = recorder.save_recording(audio_bytes, filename)
+                    
+                    # Guardar en Supabase
+                    recording_id = db_utils.save_recording_to_db(filename, filepath)
+                    
+                    # CLAVE: Marcar como procesado ANTES de mostrar mensaje
+                    st.session_state.processed_audios.add(audio_hash)
+                    
+                    # Actualizar lista
+                    st.session_state.recordings = recorder.get_recordings_list()
+                    
+                    st.success(f"✅ Archivo '{filename}' cargado y guardado")
+                    
+                    # Reset el widget para que no se procese nuevamente
+                    st.session_state.upload_key_counter += 1
+                    
+                except Exception as e:
+                    st.error(f"❌ Error al cargar: {str(e)}")
 
 with col2:
     st.markdown('<span class="badge badge-saved">AUDIOS</span>', unsafe_allow_html=True)
