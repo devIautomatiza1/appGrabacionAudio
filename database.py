@@ -6,20 +6,34 @@ from datetime import datetime
 @st.cache_resource
 def init_supabase() -> Client:
     """Inicializa conexión con Supabase"""
-    supabase_url = st.secrets.get("SUPABASE_URL")
-    supabase_key = st.secrets.get("SUPABASE_KEY")
-    
-    if not supabase_url or not supabase_key:
-        st.warning("⚠️ Configurar SUPABASE_URL y SUPABASE_KEY en secrets")
+    try:
+        supabase_url = st.secrets.get("SUPABASE_URL")
+        supabase_key = st.secrets.get("SUPABASE_KEY")
+        
+        # Debug: mostrar si existen los secrets
+        if not supabase_url:
+            st.error("❌ SUPABASE_URL no está configurado en secrets")
+            return None
+        if not supabase_key:
+            st.error("❌ SUPABASE_KEY no está configurado en secrets")
+            return None
+        
+        # Mostrar que se intenta conectar (sin mostrar claves completas)
+        st.info(f"🔗 Conectando a Supabase: {supabase_url}")
+        
+        client = create_client(supabase_url, supabase_key)
+        st.success("✅ Conexión a Supabase establecida")
+        return client
+    except Exception as e:
+        st.error(f"❌ Error al conectar a Supabase: {str(e)}")
         return None
-    
-    return create_client(supabase_url, supabase_key)
 
 def save_recording_to_db(filename: str, filepath: str, transcription: str = None):
     """Guarda grabación en la base de datos"""
     try:
         db = init_supabase()
         if db is None:
+            st.error("No se pudo conectar a Supabase")
             return False
         
         data = {
@@ -29,10 +43,20 @@ def save_recording_to_db(filename: str, filepath: str, transcription: str = None
             "created_at": datetime.now().isoformat()
         }
         
+        # Debug: mostrar que se intenta guardar
+        st.info(f"💾 Guardando: {filename}")
+        
         response = db.table("recordings").insert(data).execute()
-        return response.data[0]["id"] if response.data else None
+        
+        if response.data:
+            st.success(f"✅ Guardado en Supabase: {filename}")
+            return response.data[0]["id"]
+        else:
+            st.warning(f"⚠️ No se guardó correctamente")
+            return None
     except Exception as e:
-        st.error(f"Error guardando en BD: {e}")
+        st.error(f"❌ Error guardando en BD: {str(e)}")
+        st.warning(f"Detalles: {type(e).__name__}")
         return None
 
 def get_all_recordings():

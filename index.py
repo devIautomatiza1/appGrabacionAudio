@@ -385,3 +385,36 @@ if st.session_state.get("chat_enabled", False):
                 st.error(f"Error al generar respuesta: {e}")
 else:
     st.info("👆 Carga un audio y transcríbelo para habilitar el chat.")
+
+# SECCIÓN DEBUG
+st.divider()
+with st.expander("🔧 DEBUG - Estado de conexión"):
+    st.write("**Estado de Supabase:**")
+    try:
+        supabase_url = st.secrets.get("SUPABASE_URL")
+        supabase_key = st.secrets.get("SUPABASE_KEY")
+        
+        if supabase_url:
+            st.success(f"✅ SUPABASE_URL: {supabase_url}")
+        else:
+            st.error("❌ SUPABASE_URL no encontrado")
+        
+        if supabase_key:
+            st.success(f"✅ SUPABASE_KEY: {supabase_key[:20]}...")
+        else:
+            st.error("❌ SUPABASE_KEY no encontrado")
+        
+        # Intentar conexión de prueba
+        if supabase_url and supabase_key:
+            db = db_utils.init_supabase()
+            if db:
+                st.success("✅ Conexión exitosa a Supabase")
+                try:
+                    test = db.table("recordings").select("*").limit(1).execute()
+                    st.success(f"✅ Datos en tabla recordings: {len(test.data)} registros")
+                except Exception as e:
+                    st.error(f"❌ Error leyendo tabla: {e}")
+            else:
+                st.error("❌ No se pudo conectar")
+    except Exception as e:
+        st.error(f"❌ Error en debug: {e}")
