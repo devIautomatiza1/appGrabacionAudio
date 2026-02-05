@@ -7,6 +7,7 @@ from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
+import sys
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.routes import auth, audio, chat, history
@@ -20,6 +21,13 @@ logger = logging.getLogger(__name__)
 
 # Obtener configuración
 settings = get_settings()
+
+# ✅ Validar configuración crítica al iniciar
+try:
+    settings.validate()
+except ValueError as e:
+    logger.error(f"🚨 Configuration Error: {e}")
+    sys.exit(1)
 
 # Crear aplicación FastAPI
 app = FastAPI(
