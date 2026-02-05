@@ -1,4 +1,4 @@
 {
   "buildCommand": "pip install -r backend/requirements.txt",
-  "startCommand": "python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+  "startCommand": "gunicorn -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT backend.main:app"
 }
