@@ -12,20 +12,17 @@ def init_supabase() -> Client:
         
         # Debug: mostrar si existen los secrets
         if not supabase_url:
-            st.error("❌ SUPABASE_URL no está configurado en secrets")
             return None
         if not supabase_key:
-            st.error("❌ SUPABASE_KEY no está configurado en secrets")
             return None
         
-        # Mostrar que se intenta conectar (sin mostrar claves completas)
-        st.info(f"🔗 Conectando a Supabase: {supabase_url}")
+        # Limpiar espacios en blanco
+        supabase_url = supabase_url.strip()
+        supabase_key = supabase_key.strip()
         
         client = create_client(supabase_url, supabase_key)
-        st.success("✅ Conexión a Supabase establecida")
         return client
     except Exception as e:
-        st.error(f"❌ Error al conectar a Supabase: {str(e)}")
         return None
 
 def save_recording_to_db(filename: str, filepath: str, transcription: str = None):
@@ -43,9 +40,6 @@ def save_recording_to_db(filename: str, filepath: str, transcription: str = None
             "created_at": datetime.now().isoformat()
         }
         
-        # Debug: mostrar que se intenta guardar
-        st.info(f"💾 Guardando: {filename}")
-        
         response = db.table("recordings").insert(data).execute()
         
         if response.data:
@@ -55,8 +49,7 @@ def save_recording_to_db(filename: str, filepath: str, transcription: str = None
             st.warning(f"⚠️ No se guardó correctamente")
             return None
     except Exception as e:
-        st.error(f"❌ Error guardando en BD: {str(e)}")
-        st.warning(f"Detalles: {type(e).__name__}")
+        st.error(f"❌ Error guardando: {str(e)}")
         return None
 
 def get_all_recordings():

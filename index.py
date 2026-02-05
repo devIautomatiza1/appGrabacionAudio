@@ -389,36 +389,33 @@ else:
 # SECCIÓN DEBUG
 st.divider()
 with st.expander("🔧 DEBUG - Estado de Supabase"):
-    st.info("📊 Conectado a Supabase - Almacenamiento en la nube")
+    st.info("📊 Probando conexión a Supabase...")
     
     try:
-        # Intentar conectar
-        db = db_utils.init_supabase()
+        url = st.secrets.get("SUPABASE_URL")
+        key = st.secrets.get("SUPABASE_KEY")
         
-        if db:
-            st.success("✅ Conexión exitosa a Supabase")
+        if url and key:
+            st.write(f"✅ URL encontrada: {url}")
+            st.write(f"✅ Key encontrada: {key[:30]}...")
             
-            try:
-                # Contar grabaciones
-                recordings_data = db.table("recordings").select("*").execute()
-                rec_count = len(recordings_data.data) if recordings_data.data else 0
-                st.success(f"✅ Grabaciones guardadas: {rec_count}")
-                
-                if recordings_data.data:
-                    st.write("**Últimas 5 grabaciones:**")
-                    for rec in recordings_data.data[-5:]:
-                        st.write(f"- {rec['filename']} ({rec['created_at'][:10]})")
-            except Exception as e:
-                st.warning(f"⚠️ Error leyendo grabaciones: {e}")
+            # Intentar conexión real
+            from supabase import create_client
+            supabase = create_client(url.strip(), key.strip())
             
-            try:
-                # Contar oportunidades
-                opp_data = db.table("opportunities").select("*").execute()
-                opp_count = len(opp_data.data) if opp_data.data else 0
-                st.success(f"✅ Oportunidades guardadas: {opp_count}")
-            except Exception as e:
-                st.warning(f"⚠️ Error leyendo oportunidades: {e}")
+            # Prueba de tabla
+            test = supabase.table("recordings").select("*", count="exact").execute()
+            record_count = len(test.data) if test.data else 0
+            
+            st.success(f"✅ ¡Conexión establecida correctamente!")
+            st.success(f"✅ Grabaciones en BD: {record_count}")
+            
         else:
-            st.error("❌ No se pudo conectar a Supabase - Verifica los secrets")
+            st.error("❌ Falta SUPABASE_URL o SUPABASE_KEY en Secrets")
+            
     except Exception as e:
-        st.error(f"❌ Error: {e}")
+        st.error(f"❌ Error de conexión: {str(e)}")
+        st.info("💡 Posibles soluciones:")
+        st.write("1. Verifica que RLS esté DESHABILITADO en ambas tablas")
+        st.write("2. Haz click en 'Reboot app' en el menú (3 puntos arriba)")
+        st.write("3. Verifica que no haya espacios en blanco en los Secrets")
