@@ -115,12 +115,12 @@ with col1:
                 # Marcar este audio como procesado
                 st.session_state.audio_hashes.add(audio_hash)
                 
-                # Actualizar lista
+                # Actualizar lista - CLAVE: sincronizar ahora
                 st.session_state.recordings = recorder.get_recordings_list()
                 
                 st.success(f"✅ Audio '{filename}' grabado y guardado")
                 st.session_state.is_processing_audio = False
-                st.rerun()
+                # NO hacer rerun() aquí - solo actualizar session state
                 
             except Exception as e:
                 st.error(f"❌ Error al grabar: {str(e)}")
@@ -151,12 +151,12 @@ with col1:
                 # Marcar este archivo como procesado
                 st.session_state.audio_hashes.add(audio_hash)
                 
-                # Actualizar lista
+                # Actualizar lista - CLAVE: sincronizar ahora
                 st.session_state.recordings = recorder.get_recordings_list()
                 
                 st.success(f"✅ Archivo '{filename}' cargado y guardado")
                 st.session_state.is_processing_audio = False
-                st.rerun()
+                # NO hacer rerun() aquí - solo actualizar session state
                 
             except Exception as e:
                 st.error(f"❌ Error al cargar: {str(e)}")
@@ -166,7 +166,9 @@ with col2:
     st.markdown('<span class="badge badge-saved">AUDIOS</span>', unsafe_allow_html=True)
     st.header("Audios Guardados")
     
-    recordings = st.session_state.recordings
+    # Refresh de la lista de audios cada vez que se renderiza (para sincronizar)
+    recordings = recorder.get_recordings_list()
+    st.session_state.recordings = recordings
     
     if recordings:
         st.info(f"Total: {len(recordings)} audio(s)")
