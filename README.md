@@ -13,9 +13,11 @@ con el uso de wishper para transcribir audio a texto y gpt-4o para responder pre
 
     client = OpenAI(api_key="xxx")
 
+   EN ESTE CASO LO AGREGAMOS EN UN ARCHIVO .ENV PARA MANTENER LA API NO ACCESIBLE
+
     remplazamos las xxx por nuestra apikey de openAI necesario para que ejecute los modelos utilizados en esta palicacion.
 
-3. ejecutamos el comando
+4. ejecutamos el comando
 
     streamlit run index.py 
 
