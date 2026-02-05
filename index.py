@@ -6,7 +6,7 @@ import Model
 import OpportunitiesManager
 from datetime import datetime
 import hashlib
-import database as db_utils
+import database_local as db_utils
 
 # Configuración inicial de la interfaz de usuario
 st.set_page_config(layout="wide", page_title="Sistema Control Audio Iprevencion")
@@ -388,33 +388,21 @@ else:
 
 # SECCIÓN DEBUG
 st.divider()
-with st.expander("🔧 DEBUG - Estado de conexión"):
-    st.write("**Estado de Supabase:**")
-    try:
-        supabase_url = st.secrets.get("SUPABASE_URL")
-        supabase_key = st.secrets.get("SUPABASE_KEY")
-        
-        if supabase_url:
-            st.success(f"✅ SUPABASE_URL: {supabase_url}")
-        else:
-            st.error("❌ SUPABASE_URL no encontrado")
-        
-        if supabase_key:
-            st.success(f"✅ SUPABASE_KEY: {supabase_key[:20]}...")
-        else:
-            st.error("❌ SUPABASE_KEY no encontrado")
-        
-        # Intentar conexión de prueba
-        if supabase_url and supabase_key:
-            db = db_utils.init_supabase()
-            if db:
-                st.success("✅ Conexión exitosa a Supabase")
-                try:
-                    test = db.table("recordings").select("*").limit(1).execute()
-                    st.success(f"✅ Datos en tabla recordings: {len(test.data)} registros")
-                except Exception as e:
-                    st.error(f"❌ Error leyendo tabla: {e}")
-            else:
-                st.error("❌ No se pudo conectar")
-    except Exception as e:
-        st.error(f"❌ Error en debug: {e}")
+with st.expander("🔧 DEBUG - Estado de almacenamiento"):
+    st.info("📁 Usando almacenamiento LOCAL (JSON)")
+    
+    recordings = db_utils.load_recordings()
+    opportunities = db_utils.load_opportunities()
+    
+    st.success(f"✅ Grabaciones guardadas: {len(recordings)}")
+    st.success(f"✅ Oportunidades guardadas: {len(opportunities)}")
+    
+    if recordings:
+        st.write("**Últimas 3 grabaciones:**")
+        for rec in recordings[-3:]:
+            st.write(f"- {rec['filename']} ({rec['created_at']})")
+    
+    if opportunities:
+        st.write("**Últimas 3 oportunidades:**")
+        for opp in opportunities[-3:]:
+            st.write(f"- {opp['title']} ({opp['created_at']})")
