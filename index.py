@@ -332,25 +332,28 @@ if st.session_state.get("chat_enabled", False):
         st.header("🎟️ Tickets de Oportunidades de Negocio")
         
         for idx, opp in enumerate(opportunities):
-            # Mostrar número de ocurrencia si hay múltiples
-            occurrence_text = ""
-            if opp.get('occurrence', 1) > 1:
-                occurrence_text = f" (Ocurrencia #{opp['occurrence']})"
+            # Usar title en lugar de keyword
+            title = opp.get('title', 'Sin título')
+            created_at = opp.get('created_at', 'Sin fecha')
+            description = opp.get('description', '')
+            notes = opp.get('notes', '')
+            status = opp.get('status', 'new')
+            priority = opp.get('priority', 'Medium')
             
-            with st.expander(f"📌 {opp['keyword']}{occurrence_text} - {opp['created_at']}", expanded=False):
+            with st.expander(f"📌 {title} - {created_at}", expanded=False):
                 col_opp1, col_opp2 = st.columns([2, 1])
                 
                 with col_opp1:
                     st.markdown("<div class='ticket-label' style='color: #ef4444; text-transform: none; margin-top: 0;'>Contexto encontrado en el audio</div>", unsafe_allow_html=True)
                     st.markdown(f"""
                     <div class="notification-container notification-info">
-                        {opp['full_context']}
+                        {description if description else "Sin contexto disponible"}
                     </div>
                     """, unsafe_allow_html=True)
                     
                     new_notes = st.text_area(
                         "Notas y resumen",
-                        value=opp.get('notes', ''),
+                        value=notes,
                         placeholder="Escribe el resumen de esta oportunidad de negocio...",
                         height=100,
                         key=f"notes_{idx}",
@@ -363,7 +366,7 @@ if st.session_state.get("chat_enabled", False):
                     new_status = st.selectbox(
                         "Estado",
                         status_options,
-                        index=status_options.index(opp.get('status', 'new')),
+                        index=status_options.index(status) if status in status_options else 0,
                         key=f"status_{idx}",
                         label_visibility="collapsed"
                     )
@@ -373,7 +376,7 @@ if st.session_state.get("chat_enabled", False):
                     new_priority = st.selectbox(
                         "Prioridad",
                         priority_options,
-                        index=priority_options.index(opp.get('priority', 'Medium')),
+                        index=priority_options.index(priority) if priority in priority_options else 1,
                         key=f"priority_{idx}",
                         label_visibility="collapsed"
                     )
