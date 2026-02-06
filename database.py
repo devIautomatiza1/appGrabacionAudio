@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 from datetime import datetime
+from notifications import show_success, show_error, show_warning, show_info
 
 # Importar solo lo necesario de Supabase (sin storage3)
 try:
@@ -38,7 +39,7 @@ def save_recording_to_db(filename: str, filepath: str, transcription: str = None
     try:
         db = init_supabase()
         if db is None:
-            st.error("No se pudo conectar a Supabase")
+            show_error("No se pudo conectar a Supabase")
             return False
         
         data = {
@@ -51,13 +52,13 @@ def save_recording_to_db(filename: str, filepath: str, transcription: str = None
         response = db.table("recordings").insert(data).execute()
         
         if response.data:
-            st.success(f"✅ Guardado en Supabase: {filename}")
+            show_success(f"Guardado en Supabase: {filename}")
             return response.data[0]["id"]
         else:
-            st.warning(f"⚠️ No se guardó correctamente")
+            show_warning(f"No se guardó correctamente")
             return None
     except Exception as e:
-        st.error(f"❌ Error guardando: {str(e)}")
+        show_error(f"Error guardando: {str(e)}")
         return None
 
 def get_all_recordings():
@@ -70,7 +71,7 @@ def get_all_recordings():
         response = db.table("recordings").select("*").execute()
         return response.data if response.data else []
     except Exception as e:
-        st.error(f"Error obteniendo grabaciones: {e}")
+        show_error(f"Error obteniendo grabaciones: {e}")
         return []
 
 def update_transcription(recording_id: str, transcription: str):
@@ -87,7 +88,7 @@ def update_transcription(recording_id: str, transcription: str):
         
         return True if response.data else False
     except Exception as e:
-        st.error(f"Error actualizando transcripción: {e}")
+        show_error(f"Error actualizando transcripción: {e}")
         return False
 
 def save_opportunity(recording_id: str, title: str, description: str):
@@ -107,7 +108,7 @@ def save_opportunity(recording_id: str, title: str, description: str):
         response = db.table("opportunities").insert(data).execute()
         return True if response.data else False
     except Exception as e:
-        st.error(f"Error guardando oportunidad: {e}")
+        show_error(f"Error guardando oportunidad: {e}")
         return False
 
 def get_opportunities_by_recording(recording_id: str):
@@ -120,14 +121,14 @@ def get_opportunities_by_recording(recording_id: str):
         response = db.table("opportunities").select("*").eq("recording_id", recording_id).execute()
         return response.data if response.data else []
     except Exception as e:
-        st.error(f"Error obteniendo oportunidades: {e}")
+        show_error(f"Error obteniendo oportunidades: {e}")
         return []
 def delete_recording_from_db(recording_id: int):
     """Elimina una grabación de la base de datos"""
     try:
         db = init_supabase()
         if db is None:
-            st.error("No se pudo conectar a Supabase")
+            show_error("No se pudo conectar a Supabase")
             return False
         
         # Primero eliminar las oportunidades asociadas (por seguridad)
@@ -141,7 +142,7 @@ def delete_recording_from_db(recording_id: int):
         
         return True
     except Exception as e:
-        st.error(f"❌ Error eliminando grabación: {str(e)}")
+        show_error(f"Error eliminando grabación: {str(e)}")
         return False
 
 def delete_opportunities_by_recording(recording_id: int):
@@ -168,7 +169,7 @@ def delete_recording_by_filename(filename: str):
     try:
         db = init_supabase()
         if db is None:
-            st.error("No se pudo conectar a Supabase")
+            show_error("No se pudo conectar a Supabase")
             return False
         
         # Buscar el recording_id por filename
@@ -179,7 +180,7 @@ def delete_recording_by_filename(filename: str):
                 recording_id = response.data[0]["id"]
                 result = delete_recording_from_db(recording_id)
                 if result:
-                    st.success(f"✅ Grabación eliminada de Supabase")
+                    show_success(f"Grabación eliminada de Supabase")
                 return result
             else:
                 # No existe en BD (ya fue eliminado o nunca se guardó)
@@ -188,7 +189,7 @@ def delete_recording_by_filename(filename: str):
             # Si no existe, retornar True (no es error)
             return True
     except Exception as e:
-        st.error(f"Error eliminando grabación: {str(e)}")
+        show_error(f"Error eliminando grabación: {str(e)}")
         return False
 
 # ============================================================================
@@ -200,7 +201,7 @@ def save_transcription(recording_filename: str, content: str, language: str = "e
     try:
         db = init_supabase()
         if db is None:
-            st.warning("⚠️ No se pudo guardar transcripción en Supabase (sin conexión)")
+            show_warning("No se pudo guardar transcripción en Supabase (sin conexión)")
             return None
         
         # Obtener el recording_id por filename
@@ -208,7 +209,7 @@ def save_transcription(recording_filename: str, content: str, language: str = "e
             response = db.table("recordings").select("id").eq("filename", recording_filename).execute()
             
             if not response.data or len(response.data) == 0:
-                st.warning(f"⚠️ No se encontró el audio '{recording_filename}' en la BD")
+                show_warning(f"No se encontró el audio '{recording_filename}' en la BD")
                 return None
             
             recording_id = response.data[0]["id"]
@@ -225,18 +226,18 @@ def save_transcription(recording_filename: str, content: str, language: str = "e
             response = db.table("transcriptions").insert(data).execute()
             
             if response.data and len(response.data) > 0:
-                st.success("✅ Transcripción guardada en Supabase")
+                show_success("Transcripción guardada en Supabase")
                 return response.data[0]["id"]
             else:
-                st.warning("⚠️ No se guardó la transcripción")
+                show_warning("No se guardó la transcripción")
                 return None
         
         except Exception as e:
-            st.error(f"❌ Error guardando transcripción: {str(e)}")
+            show_error(f"Error guardando transcripción: {str(e)}")
             return None
             
     except Exception as e:
-        st.error(f"❌ Error en save_transcription: {str(e)}")
+        show_error(f"Error en save_transcription: {str(e)}")
         return None
 
 
