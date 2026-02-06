@@ -398,9 +398,33 @@ if st.session_state.get("chat_enabled", False):
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     
-    # Mostrar historial de chat
-    for message in st.session_state.chat_history:
-        st.write(message)
+    # Mostrar historial de chat con estilo profesional
+    if st.session_state.chat_history:
+        st.markdown("""
+        <div class="chat-container">
+        """, unsafe_allow_html=True)
+        
+        for message in st.session_state.chat_history:
+            if message.startswith("👤"):
+                # Mensaje del usuario
+                user_text = message.replace("👤 **Usuario**: ", "")
+                st.markdown(f"""
+                <div class="chat-message chat-message-user">
+                    <div class="chat-avatar chat-avatar-user">👤</div>
+                    <div class="chat-bubble chat-bubble-user">{user_text}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            elif message.startswith("🤖"):
+                # Mensaje de la IA
+                ai_text = message.replace("🤖 **IA**: ", "")
+                st.markdown(f"""
+                <div class="chat-message chat-message-ai">
+                    <div class="chat-avatar chat-avatar-ai">✨</div>
+                    <div class="chat-bubble chat-bubble-ai">{ai_text}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.markdown("</div>", unsafe_allow_html=True)
     
     # Campo de entrada centrado
     col_left, col_input, col_right = st.columns([1, 3, 1])
