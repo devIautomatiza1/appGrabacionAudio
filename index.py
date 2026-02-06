@@ -9,56 +9,22 @@ from datetime import datetime
 import hashlib
 import database as db_utils
 
+# 🎨 DISEÑO MODERNO - IMPORTAR
+from modern_ui import (
+    inject_modern_css,
+    section_header,
+    stat_card,
+    opportunity_card_modern,
+    badge,
+    audio_player_modern,
+    create_metric_row
+)
+
 # Configuración inicial de la interfaz de usuario
-st.set_page_config(layout="wide", page_title="Sistema Control Audio Iprevencion")
+st.set_page_config(layout="wide", page_title="🎙️ AudioPro Intelligence")
 
-# CSS para estilos
-st.markdown("""
-<style>
-@keyframes pulse-glow {
-    0% { 
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-    }
-    70% { 
-        box-shadow: 0 0 0 20px rgba(76, 175, 80, 0);
-    }
-    100% { 
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-    }
-}
-
-.success-pulse {
-    animation: pulse-glow 1.5s infinite;
-    padding: 12px 16px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
-    border-left: 4px solid #4CAF50;
-    font-weight: 500;
-}
-
-.badge {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 6px;
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    margin-right: 8px;
-}
-
-.badge-recording {
-    background: linear-gradient(135deg, #FF6B6B, #FF5252);
-}
-
-.badge-upload {
-    background: linear-gradient(135deg, #4ECDC4, #44A08D);
-}
-
-.badge-saved {
-    background: linear-gradient(135deg, #95E77D, #4CAF50);
-}
-</style>
-""", unsafe_allow_html=True)
+# ✅ INYECTAR CSS MODERNO PRIMERO (MUY IMPORTANTE)
+inject_modern_css()
 
 # Inicializar objetos
 recorder = AudioRecorder.AudioRecorder()
