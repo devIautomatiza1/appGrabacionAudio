@@ -190,3 +190,94 @@ def delete_recording_by_filename(filename: str):
     except Exception as e:
         st.error(f"Error eliminando grabación: {str(e)}")
         return False
+
+# ============================================================================
+# FUNCIONES PARA TRANSCRIPCIONES
+# ============================================================================
+
+def save_transcription(recording_filename: str, content: str, language: str = "es"):
+    """Guarda una transcripción en Supabase asociada a un recording"""
+    try:
+        db = init_supabase()
+        if db is None:
+            st.warning("⚠️ No se pudo guardar transcripción en Supabase (sin conexión)")
+            return None
+        
+        # Obtener el recording_id por filename
+        try:
+            response = db.table("recordings").select("id").eq("filename", recording_filename).execute()
+            
+            if not response.data or len(response.data) == 0:
+                st.warning(f"⚠️ No se encontró el audio '{recording_filename}' en la BD")
+                return None
+            
+            recording_id = response.data[0]["id"]
+            
+            # Guardar la transcripción
+            data = {
+                "recording_id": recording_id,
+                "content": content,
+                "language": language,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }
+            
+            response = db.table("transcriptions").insert(data).execute()
+            
+            if response.data and len(response.data) > 0:
+                st.success("✅ Transcripción guardada en Supabase")
+                return response.data[0]["id"]
+            else:
+                st.warning("⚠️ No se guardó la transcripción")
+                return None
+        
+        except Exception as e:
+            st.error(f"❌ Error guardando transcripción: {str(e)}")
+            return None
+            
+    except Exception as e:
+        st.error(f"❌ Error en save_transcription: {str(e)}")
+        return None
+
+
+def get_transcription_by_filename(recording_filename: str):
+    """Obtiene la transcripción más reciente de un audio por filename"""
+    try:
+        db = init_supabase()
+        if db is None:
+            return None
+        
+        # Obtener el recording_id
+        response = db.table("recordings").select("id").eq("filename", recording_filename).execute()
+        
+        if not response.data or len(response.data) == 0:
+            return None
+        
+        recording_id = response.data[0]["id"]
+        
+        # Obtener la transcripción más reciente
+        response = db.table("transcriptions")\
+            .select("*")\
+            .eq("recording_id", recording_id)\
+            .order("created_at", desc=True)\
+            .limit(1)\
+            .execute()
+        
+        return response.data[0] if response.data and len(response.data) > 0 else None
+        
+    except Exception as e:
+        return None
+
+
+def delete_transcription_by_id(transcription_id: str):
+    """Elimina una transcripción específica por ID"""
+    try:
+        db = init_supabase()
+        if db is None:
+            return False
+        
+        response = db.table("transcriptions").delete().eq("id", transcription_id).execute()
+        return response is not None
+        
+    except Exception as e:
+        return False

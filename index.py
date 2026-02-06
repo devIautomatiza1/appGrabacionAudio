@@ -178,6 +178,15 @@ with col2:
             )
             
             if selected_audio:
+                # Cargar transcripción existente automáticamente si existe
+                existing_transcription = db_utils.get_transcription_by_filename(selected_audio)
+                if existing_transcription:
+                    st.session_state.contexto = existing_transcription["content"]
+                    st.session_state.selected_audio = selected_audio
+                    st.session_state.chat_enabled = True
+                    st.session_state.keywords = {}
+                    st.info("✅ Transcripción cargada desde Supabase")
+                
                 col_play, col_transcribe, col_delete = st.columns([1, 1, 1])
                 
                 with col_play:
@@ -197,7 +206,15 @@ with col2:
                                 st.session_state.selected_audio = selected_audio
                                 st.session_state.chat_enabled = True
                                 st.session_state.keywords = {}
-                                st.success("Transcripción completada")
+                                
+                                # Guardar la transcripción en Supabase
+                                transcription_id = db_utils.save_transcription(
+                                    recording_filename=selected_audio,
+                                    content=transcription.text,
+                                    language="es"
+                                )
+                                
+                                st.success("✅ Transcripción completada y guardada en Supabase")
                             except Exception as e:
                                 st.error(f"Error al transcribir: {e}")
                 
