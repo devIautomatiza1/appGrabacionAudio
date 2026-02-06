@@ -3,19 +3,26 @@ import os
 import sys
 from pathlib import Path
 
-# Agregar carpeta backend al path para importar módulos
-sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
+# Agregar carpetas al path para importar módulos
+app_root = Path(__file__).parent.parent
+sys.path.insert(0, str(app_root / "backend"))
+sys.path.insert(0, str(app_root / "frontend"))
 
+# Importar de frontend (misma carpeta)
 from AudioRecorder import AudioRecorder
-from Transcriber import Transcriber
-from Model import Model
-# Force redeploy with updated credentials - 2026-02-05
-from OpportunitiesManager import OpportunitiesManager
-from datetime import datetime
-import hashlib
-import database as db_utils
 import styles
 from notifications import show_success, show_error, show_warning, show_info, show_success_expanded, show_error_expanded, show_info_expanded
+
+# Importar de backend
+from Transcriber import Transcriber
+from Model import Model
+from OpportunitiesManager import OpportunitiesManager
+import database as db_utils
+
+from datetime import datetime
+import hashlib
+
+# Force redeploy with updated credentials - 2026-02-05
 
 # Configuración inicial de la interfaz de usuario
 st.set_page_config(layout="wide", page_title="Sistema Control Audio Iprevencion")
