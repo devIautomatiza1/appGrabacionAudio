@@ -292,7 +292,6 @@ def get_styles():
 
     .chat-avatar-user {
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        color: white;
     }
 
     .chat-avatar-ai {
@@ -302,7 +301,6 @@ def get_styles():
 
     .avatar-pulse {
         animation: avatar-pulse 2s ease-in-out infinite;
-        filter: brightness(0) invert(1);
     }
 
     .avatar-spin {
