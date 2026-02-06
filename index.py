@@ -184,67 +184,67 @@ if recordings:
             format_func=lambda x: x.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", ""),
             label_visibility="collapsed"
         )
+        
+        if selected_audio:
+            # Cargar transcripción existente automáticamente si existe
+            if selected_audio != st.session_state.get("loaded_audio"):
+                existing_transcription = db_utils.get_transcription_by_filename(selected_audio)
+                if existing_transcription:
+                    st.session_state.contexto = existing_transcription["content"]
+                    st.session_state.selected_audio = selected_audio
+                    st.session_state.loaded_audio = selected_audio
+                    st.session_state.chat_enabled = True
+                    st.session_state.keywords = {}
+                    st.info("✅ Transcripción cargada desde Supabase")
             
-            if selected_audio:
-                # Cargar transcripción existente automáticamente si existe
-                if selected_audio != st.session_state.get("loaded_audio"):
-                    existing_transcription = db_utils.get_transcription_by_filename(selected_audio)
-                    if existing_transcription:
-                        st.session_state.contexto = existing_transcription["content"]
-                        st.session_state.selected_audio = selected_audio
-                        st.session_state.loaded_audio = selected_audio
-                        st.session_state.chat_enabled = True
-                        st.session_state.keywords = {}
-                        st.info("✅ Transcripción cargada desde Supabase")
-                
-                col_play, col_transcribe, col_delete = st.columns([1, 1, 1])
-                
-                with col_play:
-                    if st.button("▶️ Reproducir", use_container_width=True):
+            col_play, col_transcribe, col_delete = st.columns([1, 1, 1])
+            
+            with col_play:
+                if st.button("▶️ Reproducir", use_container_width=True):
+                    try:
+                        audio_path = recorder.get_recording_path(selected_audio)
+                        extension = selected_audio.split('.')[-1]
+                        with open(audio_path, "rb") as f:
+                            st.audio(f.read(), format=f"audio/{extension}")
+                    except Exception as e:
+                        st.error(f"Error al reproducir: {e}")
+            
+            with col_transcribe:
+                if st.button("🎙️ Transcribir", use_container_width=True):
+                    with st.spinner("Transcribiendo audio..."):
                         try:
                             audio_path = recorder.get_recording_path(selected_audio)
-                            extension = selected_audio.split('.')[-1]
-                            with open(audio_path, "rb") as f:
-                                st.audio(f.read(), format=f"audio/{extension}")
+                            transcription = transcriber_model.transcript_audio(audio_path)
+                            st.session_state.contexto = transcription.text
+                            st.session_state.selected_audio = selected_audio
+                            st.session_state.loaded_audio = selected_audio
+                            st.session_state.chat_enabled = True
+                            st.session_state.keywords = {}
+                            
+                            # Guardar la transcripción en Supabase
+                            transcription_id = db_utils.save_transcription(
+                                recording_filename=selected_audio,
+                                content=transcription.text,
+                                language="es"
+                            )
+                            
+                            st.success("✅ Transcripción completada y guardada")
                         except Exception as e:
-                            st.error(f"Error al reproducir: {e}")
-                
-                with col_transcribe:
-                    if st.button("🎙️ Transcribir", use_container_width=True):
-                        with st.spinner("Transcribiendo audio..."):
-                            try:
-                                audio_path = recorder.get_recording_path(selected_audio)
-                                transcription = transcriber_model.transcript_audio(audio_path)
-                                st.session_state.contexto = transcription.text
-                                st.session_state.selected_audio = selected_audio
-                                st.session_state.loaded_audio = selected_audio
-                                st.session_state.chat_enabled = True
-                                st.session_state.keywords = {}
-                                
-                                # Guardar la transcripción en Supabase
-                                transcription_id = db_utils.save_transcription(
-                                    recording_filename=selected_audio,
-                                    content=transcription.text,
-                                    language="es"
-                                )
-                                
-                                st.success("✅ Transcripción completada y guardada")
-                            except Exception as e:
-                                st.error(f"Error al transcribir: {e}")
-                
-                with col_delete:
-                    if st.button("🗑️ Eliminar", use_container_width=True):
-                        try:
-                            db_utils.delete_recording_by_filename(selected_audio)
-                            recorder.delete_recording(selected_audio)
-                            st.session_state.processed_audios.clear()
-                            st.session_state.recordings = recorder.get_recordings_from_supabase()
-                            st.session_state.chat_enabled = False
-                            st.session_state.loaded_audio = None
-                            st.success("✅ Audio eliminado correctamente")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Error al eliminar: {str(e)}")
+                            st.error(f"Error al transcribir: {e}")
+            
+            with col_delete:
+                if st.button("🗑️ Eliminar", use_container_width=True):
+                    try:
+                        db_utils.delete_recording_by_filename(selected_audio)
+                        recorder.delete_recording(selected_audio)
+                        st.session_state.processed_audios.clear()
+                        st.session_state.recordings = recorder.get_recordings_from_supabase()
+                        st.session_state.chat_enabled = False
+                        st.session_state.loaded_audio = None
+                        st.success("✅ Audio eliminado correctamente")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error al eliminar: {str(e)}")
     
     with tab2:
         st.subheader("🗑️ Eliminar Múltiples Audios")
