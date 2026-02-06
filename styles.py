@@ -6,6 +6,28 @@ def get_styles():
     """Retorna todos los estilos CSS de la aplicación"""
     return """
     <style>
+    /* Contenedor principal centrado */
+    .main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+    
+    .stMainBlockContainer {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    [data-testid="stAppViewContainer"] {
+        padding: 0;
+    }
+    
+    [data-testid="stAppViewContainer"] > section {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+    
     @keyframes pulse-glow {
         0% { 
             box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
