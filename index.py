@@ -86,10 +86,8 @@ st.title("Sistema Control Audio Iprevencion")
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    st.markdown('<span class="badge badge-recording">GRABAR</span>', unsafe_allow_html=True)
-    
     # GRABADORA DE AUDIO EN VIVO (nativa de Streamlit)
-    st.subheader("Grabadora en vivo")
+    st.markdown('<h3 style="color: #FF6B6B;">🎤 Grabadora en vivo</h3>', unsafe_allow_html=True)
     st.caption("Graba directamente desde tu micrófono (sin interrupciones)")
     
     audio_data = st.audio_input("Presiona el botón para grabar:", key=f"audio_recorder_{st.session_state.record_key_counter}")
@@ -128,8 +126,7 @@ with col1:
     st.divider()
     
     # Opción de subir archivo
-    st.markdown('<span class="badge badge-upload">SUBIR</span>', unsafe_allow_html=True)
-    st.header("Sube un archivo de audio")
+    st.markdown('<h3 style="color: #4ECDC4;">📤 Sube un archivo de audio</h3>', unsafe_allow_html=True)
     uploaded_file = st.file_uploader("Selecciona un archivo de audio", type=["mp3", "wav", "m4a", "ogg", "flac", "webm"], key=f"audio_uploader_{st.session_state.upload_key_counter}")
     
     if uploaded_file is not None:
@@ -161,8 +158,7 @@ with col1:
                     st.error(f"❌ Error al cargar: {str(e)}")
 
 with col2:
-    st.markdown('<span class="badge badge-saved">AUDIOS</span>', unsafe_allow_html=True)
-    st.header("Audios Guardados")
+    st.markdown('<h3 style="color: #95E77D;">🎵 Audios Guardados</h3>', unsafe_allow_html=True)
     
     # Refresh de la lista de audios desde Supabase cada vez que se renderiza (para sincronizar)
     recordings = recorder.get_recordings_from_supabase()
