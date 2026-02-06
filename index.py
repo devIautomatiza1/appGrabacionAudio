@@ -186,6 +186,7 @@ with col2:
                     st.session_state.chat_enabled = True
                     st.session_state.keywords = {}
                     st.info("✅ Transcripción cargada desde Supabase")
+                    st.rerun()
                 
                 col_play, col_transcribe, col_delete = st.columns([1, 1, 1])
                 
