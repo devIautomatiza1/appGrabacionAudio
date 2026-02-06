@@ -323,7 +323,7 @@ if st.session_state.get("chat_enabled", False):
                 col_opp1, col_opp2 = st.columns([2, 1])
                 
                 with col_opp1:
-                    st.markdown("<div class='ticket-label'>Contexto encontrado en el audio</div>", unsafe_allow_html=True)
+                    st.markdown("<div class='ticket-label' style='color: #ef4444; text-transform: none; margin-top: 0;'>Contexto encontrado en el audio</div>", unsafe_allow_html=True)
                     st.markdown(f"""
                     <div class="notification-container notification-info">
                         {opp['full_context']}
