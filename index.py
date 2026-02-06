@@ -319,7 +319,7 @@ if st.session_state.get("chat_enabled", False):
             if opp.get('occurrence', 1) > 1:
                 occurrence_text = f" (Ocurrencia #{opp['occurrence']})"
             
-            with st.expander(f"📌 <span class='ticket-header'>{opp['keyword']}</span>{occurrence_text} - {opp['created_at']}", expanded=False):
+            with st.expander(f"📌 {opp['keyword']}{occurrence_text} - {opp['created_at']}", expanded=False):
                 col_opp1, col_opp2 = st.columns([2, 1])
                 
                 with col_opp1:
