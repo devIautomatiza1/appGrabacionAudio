@@ -27,17 +27,6 @@ st.markdown("""
     }
 }
 
-@keyframes slide-in {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 .success-pulse {
     animation: pulse-glow 1.5s infinite;
     padding: 12px 16px;
@@ -68,52 +57,6 @@ st.markdown("""
 .badge-saved {
     background: linear-gradient(135deg, #95E77D, #4CAF50);
 }
-
-/* Estilos modernos para notificaciones */
-.notification-container {
-    animation: slide-in 0.3s ease-out;
-    margin: 10px 0;
-}
-
-.notification-success {
-    background: linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
-    border-left: 5px solid #34d399;
-    border-radius: 8px;
-    padding: 14px 16px;
-    font-weight: 500;
-    color: #10b981;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
-}
-
-.notification-error {
-    background: linear-gradient(135deg, rgba(248, 113, 113, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
-    border-left: 5px solid #f87171;
-    border-radius: 8px;
-    padding: 14px 16px;
-    font-weight: 500;
-    color: #dc2626;
-    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
-}
-
-.notification-warning {
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
-    border-left: 5px solid #fbbf24;
-    border-radius: 8px;
-    padding: 14px 16px;
-    font-weight: 500;
-    color: #d97706;
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.1);
-}
-
-.notification-info {
-    background: linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
-    border-left: 5px solid #60a5fa;
-    border-radius: 8px;
-    padding: 14px 16px;
-    font-weight: 500;
-    color: #2563eb;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -122,39 +65,6 @@ recorder = AudioRecorder.AudioRecorder()
 transcriber_model = Transcriber.Transcriber()
 chat_model = Model.Model()
 opp_manager = OpportunitiesManager.OpportunitiesManager()
-
-# Funciones auxiliares para notificaciones modernas
-def show_success(message: str):
-    """Muestra una notificación de éxito con diseño moderno"""
-    st.markdown(f"""
-    <div class="notification-container notification-success">
-        ✅ {message}
-    </div>
-    """, unsafe_allow_html=True)
-
-def show_error(message: str):
-    """Muestra una notificación de error con diseño moderno"""
-    st.markdown(f"""
-    <div class="notification-container notification-error">
-        ❌ {message}
-    </div>
-    """, unsafe_allow_html=True)
-
-def show_warning(message: str):
-    """Muestra una notificación de advertencia con diseño moderno"""
-    st.markdown(f"""
-    <div class="notification-container notification-warning">
-        ⚠️ {message}
-    </div>
-    """, unsafe_allow_html=True)
-
-def show_info(message: str):
-    """Muestra una notificación de información con diseño moderno"""
-    st.markdown(f"""
-    <div class="notification-container notification-info">
-        ℹ️ {message}
-    </div>
-    """, unsafe_allow_html=True)
 
 # Inicializar estado de sesión
 if "processed_audios" not in st.session_state:
@@ -205,13 +115,13 @@ with col1:
                     # Actualizar lista desde Supabase
                     st.session_state.recordings = recorder.get_recordings_from_supabase()
                     
-                    show_success(f"Audio '{filename}' grabado y guardado")
+                    st.success(f"✅ Audio '{filename}' grabado y guardado")
                     
                     # Reset el widget para que no se procese nuevamente
                     st.session_state.record_key_counter += 1
                     
                 except Exception as e:
-                    show_error(f"Error al grabar: {str(e)}")
+                    st.error(f"❌ Error al grabar: {str(e)}")
     
     st.divider()
     
@@ -239,13 +149,13 @@ with col1:
                     # Actualizar lista desde Supabase
                     st.session_state.recordings = recorder.get_recordings_from_supabase()
                     
-                    show_success(f"Archivo '{filename}' cargado y guardado")
+                    st.success(f"✅ Archivo '{filename}' cargado y guardado")
                     
                     # Reset el widget para que no se procese nuevamente
                     st.session_state.upload_key_counter += 1
                     
                 except Exception as e:
-                    show_error(f"Error al cargar: {str(e)}")
+                    st.error(f"❌ Error al cargar: {str(e)}")
 
 with col2:
     st.markdown('<h3 style="color: white;">Audios Guardados</h3>', unsafe_allow_html=True)
@@ -255,7 +165,7 @@ with col2:
     st.session_state.recordings = recordings
     
     if recordings:
-        show_info(f"Total: {len(recordings)} audio(s)")
+        st.info(f"Total: {len(recordings)} audio(s)")
         
         # Tabs para diferentes vistas
         tab1, tab2 = st.tabs(["Transcribir", "Gestión en lote"])
@@ -277,7 +187,7 @@ with col2:
                         st.session_state.loaded_audio = selected_audio
                         st.session_state.chat_enabled = True
                         st.session_state.keywords = {}
-                        show_info("Transcripción cargada desde Supabase")
+                        st.info("✅ Transcripción cargada desde Supabase")
                 
                 col_play, col_transcribe, col_delete = st.columns([1, 1, 1])
                 
@@ -307,9 +217,9 @@ with col2:
                                     language="es"
                                 )
                                 
-                                show_success("Transcripción completada y guardada en Supabase")
+                                st.success("✅ Transcripción completada y guardada en Supabase")
                             except Exception as e:
-                                show_error(f"Error al transcribir: {e}")
+                                st.error(f"Error al transcribir: {e}")
                 
                 with col_delete:
                     if st.button("Eliminar", key=f"delete_{selected_audio}"):
@@ -324,10 +234,10 @@ with col2:
                             st.session_state.recordings = recorder.get_recordings_from_supabase()
                             st.session_state.chat_enabled = False
                             st.session_state.loaded_audio = None
-                            show_success("Audio eliminado correctamente")
+                            st.success("✅ Audio eliminado correctamente")
                             st.rerun()
                         except Exception as e:
-                            show_error(f"Error al eliminar: {str(e)}")
+                            st.error(f"❌ Error al eliminar: {str(e)}")
         
         with tab2:
             st.subheader("Eliminar múltiples audios")
@@ -340,7 +250,7 @@ with col2:
             )
             
             if audios_to_delete:
-                show_warning(f"Vas a eliminar {len(audios_to_delete)} audio(s)")
+                st.warning(f"Vas a eliminar {len(audios_to_delete)} audio(s)")
                 
                 st.write("**Audios seleccionados:**")
                 for audio in audios_to_delete:
@@ -360,21 +270,21 @@ with col2:
                                     recorder.delete_recording(audio)
                                     deleted_count += 1
                                 except Exception as e:
-                                    show_error(f"Error al eliminar {audio}: {e}")
+                                    st.error(f"Error al eliminar {audio}: {e}")
                             
                             # Limpiar processed_audios para permitir re-agregar
                             st.session_state.processed_audios.clear()
                             st.session_state.recordings = recorder.get_recordings_from_supabase()
                             st.session_state.chat_enabled = False
-                            show_success(f"{deleted_count} audio(s) eliminado(s) exitosamente")
+                            st.success(f"✅ {deleted_count} audio(s) eliminado(s) exitosamente")
                             st.rerun()
                         except Exception as e:
-                            show_error(f"Error en eliminación: {str(e)}")
+                            st.error(f"Error en eliminación: {str(e)}")
                 
                 with col_cancel:
                     st.write("")
     else:
-        show_info("No hay audios guardados. Sube un archivo.")
+        st.info("No hay audios guardados. Sube un archivo.")
 
 # SECCIÓN DE TRANSCRIPCIÓN
 st.divider()
@@ -400,7 +310,7 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
         if st.button("➕ Añadir", use_container_width=True):
             if new_keyword:
                 st.session_state.keywords[new_keyword] = keyword_context if keyword_context else "Sin descripción"
-                show_success(f"'{new_keyword}' añadida")
+                st.success(f"✅ '{new_keyword}' añadida")
                 st.rerun()
     
     # Mostrar palabras clave
@@ -435,11 +345,11 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                     saved_count += 1
                 
                 if saved_count > 0:
-                    show_success(f"{saved_count} ticket(s) de oportunidad generado(s)")
+                    st.success(f"✅ {saved_count} ticket(s) de oportunidad generado(s)")
                     st.session_state.show_opportunities = True
                     st.rerun()
                 else:
-                    show_warning("No se encontraron oportunidades con las palabras clave")
+                    st.warning("⚠️ No se encontraron oportunidades con las palabras clave")
 
 # SECCIÓN DE OPORTUNIDADES
 st.divider()
@@ -462,11 +372,7 @@ if st.session_state.get("chat_enabled", False):
                 
                 with col_opp1:
                     st.write("**Contexto encontrado en el audio:**")
-                    st.markdown(f"""
-                    <div class="notification-container notification-info">
-                        {opp['full_context']}
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.info(opp['full_context'])
                     
                     new_notes = st.text_area(
                         "Notas y resumen:",
@@ -504,18 +410,18 @@ if st.session_state.get("chat_enabled", False):
                         opp['status'] = new_status
                         opp['priority'] = new_priority
                         if opp_manager.update_opportunity(opp, selected_audio):
-                            show_success("Cambios guardados en Supabase")
+                            st.success("✅ Cambios guardados en Supabase")
                             st.rerun()
                         else:
-                            show_error("Error al guardar los cambios")
+                            st.error("❌ Error al guardar los cambios")
                 
                 with col_delete:
                     if st.button("🗑️ Eliminar", key=f"delete_{idx}", use_container_width=True):
                         if opp_manager.delete_opportunity(opp['id'], selected_audio):
-                            show_success("Oportunidad eliminada de Supabase")
+                            st.success("✅ Oportunidad eliminada de Supabase")
                             st.rerun()
                         else:
-                            show_error("Error al eliminar la oportunidad")
+                            st.error("❌ Error al eliminar la oportunidad")
 
 # SECCIÓN DE CHAT
 st.divider()
@@ -526,7 +432,7 @@ if st.session_state.get("chat_enabled", False):
     
     # Mostrar palabras clave activas
     if st.session_state.get("keywords"):
-        show_info(f"Palabras clave activas: {', '.join(st.session_state.keywords.keys())}")
+        st.info(f"🏷️ Palabras clave activas: {', '.join(st.session_state.keywords.keys())}")
     
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
@@ -549,14 +455,14 @@ if st.session_state.get("chat_enabled", False):
                 st.session_state.chat_history.append(f"🤖 **IA**: {response}")
                 st.rerun()
             except Exception as e:
-                show_error(f"Error al generar respuesta: {e}")
+                st.error(f"Error al generar respuesta: {e}")
 else:
-    show_info("Carga un audio y transcríbelo para habilitar el chat.")
+    st.info("👆 Carga un audio y transcríbelo para habilitar el chat.")
 
 # SECCIÓN DEBUG
 st.divider()
 with st.expander("🔧 DEBUG - Estado de Supabase"):
-    show_info("Probando conexión a Supabase...")
+    st.info("📊 Probando conexión a Supabase...")
     
     try:
         # Usar el cliente que ya tenemos en database.py
@@ -575,16 +481,16 @@ with st.expander("🔧 DEBUG - Estado de Supabase"):
             test_trans = supabase.table("transcriptions").select("*", count="exact").execute()
             trans_count = len(test_trans.data) if test_trans.data else 0
             
-            show_success("¡Conexión establecida correctamente!")
-            show_success(f"Grabaciones en BD: {record_count}")
-            show_success(f"Oportunidades en BD: {opp_count}")
-            show_success(f"Transcripciones en BD: {trans_count}")
+            st.success(f"✅ ¡Conexión establecida correctamente!")
+            st.success(f"✅ Grabaciones en BD: {record_count}")
+            st.success(f"✅ Oportunidades en BD: {opp_count}")
+            st.success(f"✅ Transcripciones en BD: {trans_count}")
         else:
-            show_error("Falta SUPABASE_URL o SUPABASE_KEY en Secrets")
+            st.error("❌ Falta SUPABASE_URL o SUPABASE_KEY en Secrets")
             
     except Exception as e:
-        show_error(f"Error de conexión: {str(e)}")
-        show_info("Posibles soluciones:")
+        st.error(f"❌ Error de conexión: {str(e)}")
+        st.info("💡 Posibles soluciones:")
         st.write("1. Verifica que RLS esté DESHABILITADO en ambas tablas")
         st.write("2. Haz click en 'Reboot app' en el menú (3 puntos arriba)")
         st.write("3. Verifica que no haya espacios en blanco en los Secrets")
