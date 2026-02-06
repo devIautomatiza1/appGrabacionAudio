@@ -28,6 +28,16 @@ def get_styles():
         padding: 0 40px;
     }
     
+    /* Centrar input de chat */
+    [data-testid="stInputBase"] {
+        max-width: 100%;
+    }
+    
+    .stChatInputContainer {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    
     @keyframes pulse-glow {
         0% { 
             box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
