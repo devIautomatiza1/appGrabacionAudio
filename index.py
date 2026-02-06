@@ -9,56 +9,20 @@ from datetime import datetime
 import hashlib
 import database as db_utils
 
+# 🎨 DISEÑO MODERNO - IMPORTAR
+from modern_ui import (
+    inject_modern_css,
+    success_toast,
+    error_toast,
+    warning_toast,
+    info_toast
+)
+
 # Configuración inicial de la interfaz de usuario
-st.set_page_config(layout="wide", page_title="Sistema Control Audio Iprevencion")
+st.set_page_config(layout="wide", page_title="🎙️ AudioPro Intelligence")
 
-# CSS para estilos
-st.markdown("""
-<style>
-@keyframes pulse-glow {
-    0% { 
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-    }
-    70% { 
-        box-shadow: 0 0 0 20px rgba(76, 175, 80, 0);
-    }
-    100% { 
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-    }
-}
-
-.success-pulse {
-    animation: pulse-glow 1.5s infinite;
-    padding: 12px 16px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
-    border-left: 4px solid #4CAF50;
-    font-weight: 500;
-}
-
-.badge {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 6px;
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    margin-right: 8px;
-}
-
-.badge-recording {
-    background: linear-gradient(135deg, #FF6B6B, #FF5252);
-}
-
-.badge-upload {
-    background: linear-gradient(135deg, #4ECDC4, #44A08D);
-}
-
-.badge-saved {
-    background: linear-gradient(135deg, #95E77D, #4CAF50);
-}
-</style>
-""", unsafe_allow_html=True)
+# ✅ INYECTAR CSS MODERNO PRIMERO (MUY IMPORTANTE)
+inject_modern_css()
 
 # Inicializar objetos
 recorder = AudioRecorder.AudioRecorder()
@@ -80,7 +44,20 @@ if "upload_key_counter" not in st.session_state:
 if "record_key_counter" not in st.session_state:
     st.session_state.record_key_counter = 0
 
-st.title("Sistema Control Audio Iprevencion")
+# ============================================================================
+# ENCABEZADO CON ESTILO MODERNO
+# ============================================================================
+
+st.markdown("""
+<div style="text-align: center; margin: 2rem 0; padding: 2rem;">
+    <h1 style="font-size: 3rem; margin: 0;">🎙️ AudioPro</h1>
+    <p style="color: #B0B8C1; font-size: 1.1rem; margin-top: 0.5rem;">
+        Plataforma de IA para Transcripción y Análisis de Audios
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+st.divider()
 
 # Crear dos columnas principales para la carga
 col1, col2 = st.columns([1, 1])
@@ -115,13 +92,13 @@ with col1:
                     # Actualizar lista desde Supabase
                     st.session_state.recordings = recorder.get_recordings_from_supabase()
                     
-                    st.success(f"✅ Audio '{filename}' grabado y guardado")
+                    success_toast(f"Audio '{filename}' grabado y guardado")
                     
                     # Reset el widget para que no se procese nuevamente
                     st.session_state.record_key_counter += 1
                     
                 except Exception as e:
-                    st.error(f"❌ Error al grabar: {str(e)}")
+                    error_toast(f"Error al grabar: {str(e)}")
     
     st.divider()
     
@@ -149,13 +126,13 @@ with col1:
                     # Actualizar lista desde Supabase
                     st.session_state.recordings = recorder.get_recordings_from_supabase()
                     
-                    st.success(f"✅ Archivo '{filename}' cargado y guardado")
+                    success_toast(f"Archivo '{filename}' cargado y guardado")
                     
                     # Reset el widget para que no se procese nuevamente
                     st.session_state.upload_key_counter += 1
                     
                 except Exception as e:
-                    st.error(f"❌ Error al cargar: {str(e)}")
+                    error_toast(f"Error al cargar: {str(e)}")
 
 with col2:
     st.markdown('<h3 style="color: white;">Audios Guardados</h3>', unsafe_allow_html=True)
@@ -165,7 +142,7 @@ with col2:
     st.session_state.recordings = recordings
     
     if recordings:
-        st.info(f"Total: {len(recordings)} audio(s)")
+        # Métrica de audios guardados
         
         # Tabs para diferentes vistas
         tab1, tab2 = st.tabs(["Transcribir", "Gestión en lote"])
@@ -187,7 +164,7 @@ with col2:
                         st.session_state.loaded_audio = selected_audio
                         st.session_state.chat_enabled = True
                         st.session_state.keywords = {}
-                        st.info("✅ Transcripción cargada desde Supabase")
+                        info_toast("Transcripción cargada desde Supabase")
                 
                 col_play, col_transcribe, col_delete = st.columns([1, 1, 1])
                 
@@ -217,9 +194,9 @@ with col2:
                                     language="es"
                                 )
                                 
-                                st.success("✅ Transcripción completada y guardada en Supabase")
+                                success_toast("Transcripción completada y guardada")
                             except Exception as e:
-                                st.error(f"Error al transcribir: {e}")
+                                error_toast(f"Error al transcribir: {e}")
                 
                 with col_delete:
                     if st.button("Eliminar", key=f"delete_{selected_audio}"):
@@ -234,10 +211,10 @@ with col2:
                             st.session_state.recordings = recorder.get_recordings_from_supabase()
                             st.session_state.chat_enabled = False
                             st.session_state.loaded_audio = None
-                            st.success("✅ Audio eliminado correctamente")
+                            success_toast("Audio eliminado correctamente")
                             st.rerun()
                         except Exception as e:
-                            st.error(f"❌ Error al eliminar: {str(e)}")
+                            error_toast(f"Error al eliminar: {str(e)}")
         
         with tab2:
             st.subheader("Eliminar múltiples audios")
@@ -250,7 +227,7 @@ with col2:
             )
             
             if audios_to_delete:
-                st.warning(f"Vas a eliminar {len(audios_to_delete)} audio(s)")
+                warning_toast(f"Vas a eliminar {len(audios_to_delete)} audio(s)")
                 
                 st.write("**Audios seleccionados:**")
                 for audio in audios_to_delete:
@@ -270,21 +247,21 @@ with col2:
                                     recorder.delete_recording(audio)
                                     deleted_count += 1
                                 except Exception as e:
-                                    st.error(f"Error al eliminar {audio}: {e}")
+                                    error_toast(f"Error al eliminar {audio}: {e}")
                             
                             # Limpiar processed_audios para permitir re-agregar
                             st.session_state.processed_audios.clear()
                             st.session_state.recordings = recorder.get_recordings_from_supabase()
                             st.session_state.chat_enabled = False
-                            st.success(f"✅ {deleted_count} audio(s) eliminado(s) exitosamente")
+                            success_toast(f"{deleted_count} audio(s) eliminado(s)")
                             st.rerun()
                         except Exception as e:
-                            st.error(f"Error en eliminación: {str(e)}")
+                            error_toast(f"Error en eliminación: {str(e)}")
                 
                 with col_cancel:
                     st.write("")
     else:
-        st.info("No hay audios guardados. Sube un archivo.")
+        st.info("📭 No hay audios guardados. Carga uno para comenzar.")
 
 # SECCIÓN DE TRANSCRIPCIÓN
 st.divider()
@@ -310,7 +287,7 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
         if st.button("➕ Añadir", use_container_width=True):
             if new_keyword:
                 st.session_state.keywords[new_keyword] = keyword_context if keyword_context else "Sin descripción"
-                st.success(f"✅ '{new_keyword}' añadida")
+                success_toast(f"'{new_keyword}' agregada")
                 st.rerun()
     
     # Mostrar palabras clave
@@ -345,11 +322,11 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                     saved_count += 1
                 
                 if saved_count > 0:
-                    st.success(f"✅ {saved_count} ticket(s) de oportunidad generado(s)")
+                    success_toast(f"{saved_count} ticket(s) de oportunidad generado(s)")
                     st.session_state.show_opportunities = True
                     st.rerun()
                 else:
-                    st.warning("⚠️ No se encontraron oportunidades con las palabras clave")
+                    warning_toast("No se encontraron oportunidades con las palabras clave")
 
 # SECCIÓN DE OPORTUNIDADES
 st.divider()
@@ -372,7 +349,7 @@ if st.session_state.get("chat_enabled", False):
                 
                 with col_opp1:
                     st.write("**Contexto encontrado en el audio:**")
-                    st.info(opp['full_context'])
+                    st.markdown(f"<div style='background: rgba(0,251,255,0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #00FBFF; color: #B0B8C1;'>{opp['full_context']}</div>", unsafe_allow_html=True)
                     
                     new_notes = st.text_area(
                         "Notas y resumen:",
@@ -410,18 +387,18 @@ if st.session_state.get("chat_enabled", False):
                         opp['status'] = new_status
                         opp['priority'] = new_priority
                         if opp_manager.update_opportunity(opp, selected_audio):
-                            st.success("✅ Cambios guardados en Supabase")
+                            success_toast("Cambios guardados")
                             st.rerun()
                         else:
-                            st.error("❌ Error al guardar los cambios")
+                            error_toast("Error al guardar")
                 
                 with col_delete:
                     if st.button("🗑️ Eliminar", key=f"delete_{idx}", use_container_width=True):
                         if opp_manager.delete_opportunity(opp['id'], selected_audio):
-                            st.success("✅ Oportunidad eliminada de Supabase")
+                            success_toast("Eliminado")
                             st.rerun()
                         else:
-                            st.error("❌ Error al eliminar la oportunidad")
+                            error_toast("Error al eliminar")
 
 # SECCIÓN DE CHAT
 st.divider()
@@ -432,7 +409,8 @@ if st.session_state.get("chat_enabled", False):
     
     # Mostrar palabras clave activas
     if st.session_state.get("keywords"):
-        st.info(f"🏷️ Palabras clave activas: {', '.join(st.session_state.keywords.keys())}")
+        keywords_text = ", ".join(st.session_state.keywords.keys())
+        st.info(f"🏷️ Palabras clave activas: {keywords_text}")
     
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
@@ -455,14 +433,14 @@ if st.session_state.get("chat_enabled", False):
                 st.session_state.chat_history.append(f"🤖 **IA**: {response}")
                 st.rerun()
             except Exception as e:
-                st.error(f"Error al generar respuesta: {e}")
+                error_toast(f"Error: {e}")
 else:
-    st.info("👆 Carga un audio y transcríbelo para habilitar el chat.")
+    st.info("👆 Carga un audio, transcríbelo y agrega palabras clave para activar todas las funciones.")
 
 # SECCIÓN DEBUG
 st.divider()
-with st.expander("🔧 DEBUG - Estado de Supabase"):
-    st.info("📊 Probando conexión a Supabase...")
+with st.expander("🔧 Monitor del Sistema", expanded=False):
+    st.info("📊 Estado de Supabase y estadísticas generales")
     
     try:
         # Usar el cliente que ya tenemos en database.py
@@ -481,16 +459,17 @@ with st.expander("🔧 DEBUG - Estado de Supabase"):
             test_trans = supabase.table("transcriptions").select("*", count="exact").execute()
             trans_count = len(test_trans.data) if test_trans.data else 0
             
-            st.success(f"✅ ¡Conexión establecida correctamente!")
-            st.success(f"✅ Grabaciones en BD: {record_count}")
-            st.success(f"✅ Oportunidades en BD: {opp_count}")
-            st.success(f"✅ Transcripciones en BD: {trans_count}")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Grabaciones", record_count, "🎵")
+            with col2:
+                st.metric("Oportunidades", opp_count, "📋")
+            with col3:
+                st.metric("Transcripciones", trans_count, "📝")
+            
+            success_toast("Conexión a Supabase establecida")
         else:
-            st.error("❌ Falta SUPABASE_URL o SUPABASE_KEY en Secrets")
+            error_toast("Falta configuración en Secrets")
             
     except Exception as e:
-        st.error(f"❌ Error de conexión: {str(e)}")
-        st.info("💡 Posibles soluciones:")
-        st.write("1. Verifica que RLS esté DESHABILITADO en ambas tablas")
-        st.write("2. Haz click en 'Reboot app' en el menú (3 puntos arriba)")
-        st.write("3. Verifica que no haya espacios en blanco en los Secrets")
+        error_toast(f"Error de conexión: {str(e)}")
