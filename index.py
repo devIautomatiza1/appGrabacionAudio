@@ -448,8 +448,13 @@ with st.expander("🔧 DEBUG - Estado de Supabase"):
             test = supabase.table("recordings").select("*", count="exact").execute()
             record_count = len(test.data) if test.data else 0
             
+            # Contar oportunidades
+            test_opp = supabase.table("opportunities").select("*", count="exact").execute()
+            opp_count = len(test_opp.data) if test_opp.data else 0
+            
             st.success(f"✅ ¡Conexión establecida correctamente!")
             st.success(f"✅ Grabaciones en BD: {record_count}")
+            st.success(f"✅ Oportunidades en BD: {opp_count}")
             
         else:
             st.error("❌ Falta SUPABASE_URL o SUPABASE_KEY en Secrets")
