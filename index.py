@@ -70,7 +70,7 @@ opp_manager = OpportunitiesManager.OpportunitiesManager()
 if "processed_audios" not in st.session_state:
     st.session_state.processed_audios = set()  # Audios ya procesados
 if "recordings" not in st.session_state:
-    st.session_state.recordings = recorder.get_recordings_list()
+    st.session_state.recordings = recorder.get_recordings_from_supabase()
 if "is_deleting" not in st.session_state:
     st.session_state.is_deleting = False
 if "selected_audio" not in st.session_state:
@@ -114,8 +114,8 @@ with col1:
                     # CLAVE: Marcar como procesado ANTES de mostrar mensaje
                     st.session_state.processed_audios.add(audio_hash)
                     
-                    # Actualizar lista
-                    st.session_state.recordings = recorder.get_recordings_list()
+                    # Actualizar lista desde Supabase
+                    st.session_state.recordings = recorder.get_recordings_from_supabase()
                     
                     st.success(f"✅ Audio '{filename}' grabado y guardado")
                     
@@ -149,8 +149,8 @@ with col1:
                     # CLAVE: Marcar como procesado ANTES de mostrar mensaje
                     st.session_state.processed_audios.add(audio_hash)
                     
-                    # Actualizar lista
-                    st.session_state.recordings = recorder.get_recordings_list()
+                    # Actualizar lista desde Supabase
+                    st.session_state.recordings = recorder.get_recordings_from_supabase()
                     
                     st.success(f"✅ Archivo '{filename}' cargado y guardado")
                     
@@ -164,8 +164,8 @@ with col2:
     st.markdown('<span class="badge badge-saved">AUDIOS</span>', unsafe_allow_html=True)
     st.header("Audios Guardados")
     
-    # Refresh de la lista de audios cada vez que se renderiza (para sincronizar)
-    recordings = recorder.get_recordings_list()
+    # Refresh de la lista de audios desde Supabase cada vez que se renderiza (para sincronizar)
+    recordings = recorder.get_recordings_from_supabase()
     st.session_state.recordings = recordings
     
     if recordings:
@@ -215,9 +215,10 @@ with col2:
                             # Limpiar processed_audios para permitir re-agregar si es necesario
                             st.session_state.processed_audios.clear()
                             
-                            st.session_state.recordings = recorder.get_recordings_list()
+                            st.session_state.recordings = recorder.get_recordings_from_supabase()
                             st.session_state.chat_enabled = False
                             st.success("✅ Audio eliminado correctamente")
+                            st.rerun()
                         except Exception as e:
                             st.error(f"❌ Error al eliminar: {str(e)}")
         
@@ -256,9 +257,10 @@ with col2:
                             
                             # Limpiar processed_audios para permitir re-agregar
                             st.session_state.processed_audios.clear()
-                            st.session_state.recordings = recorder.get_recordings_list()
+                            st.session_state.recordings = recorder.get_recordings_from_supabase()
                             st.session_state.chat_enabled = False
                             st.success(f"✅ {deleted_count} audio(s) eliminado(s) exitosamente")
+                            st.rerun()
                         except Exception as e:
                             st.error(f"Error en eliminación: {str(e)}")
                 

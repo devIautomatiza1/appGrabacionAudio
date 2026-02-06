@@ -1,7 +1,15 @@
 import streamlit as st
-from supabase import create_client, Client
 import os
 from datetime import datetime
+
+# Importar solo lo necesario de Supabase (sin storage3)
+try:
+    from supabase import create_client, Client
+except ImportError:
+    # Si falla por storage3/pyiceberg, usamos postgrest directamente
+    from postgrest import AsyncPostgrestClient
+    create_client = None
+    Client = None
 
 @st.cache_resource
 def init_supabase() -> Client:
