@@ -113,8 +113,7 @@ with col2:
     uploaded_file = st.file_uploader(
         "Selecciona un archivo de audio",
         type=["mp3", "wav", "m4a", "ogg", "flac", "webm"],
-        key=f"audio_uploader_{st.session_state.upload_key_counter}",
-        label_visibility="collapsed"
+        key=f"audio_uploader_{st.session_state.upload_key_counter}"
     )
     
     if uploaded_file is not None:
@@ -181,8 +180,7 @@ if recordings:
         selected_audio = st.selectbox(
             "Selecciona un audio",
             recordings,
-            format_func=lambda x: x.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", ""),
-            label_visibility="collapsed"
+            format_func=lambda x: x.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", "")
         )
         
         if selected_audio:
@@ -253,8 +251,7 @@ if recordings:
         audios_to_delete = st.multiselect(
             "Audios a eliminar:",
             recordings,
-            format_func=lambda x: x.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", ""),
-            label_visibility="collapsed"
+            format_func=lambda x: x.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", "")
         )
         
         if audios_to_delete:
@@ -262,7 +259,7 @@ if recordings:
             
             st.write("**Audios seleccionados:**")
             for audio in audios_to_delete:
-                badge(audio, "status-new")
+                badge(audio, "info")
             
             col_confirm, col_cancel = st.columns(2)
             with col_confirm:
@@ -289,8 +286,11 @@ if recordings:
 else:
     st.info("📭 No hay audios guardados. Carga uno para comenzar.")
 
-# SECCIÓN DE TRANSCRIPCIÓN
 st.divider()
+
+# ============================================================================
+# SECCIÓN 3: TRANSCRIPCIÓN
+# ============================================================================
 
 if st.session_state.get("chat_enabled", False) and st.session_state.get("contexto"):
     section_header("📝 Transcripción del Audio", f"De: {st.session_state.get('selected_audio', 'audio')}")
@@ -300,7 +300,7 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
     st.divider()
     
     # ========================================================================
-    # SECCIÓN 3: PALABRAS CLAVE
+    # SECCIÓN 4: PALABRAS CLAVE
     # ========================================================================
     
     section_header("🔑 Palabras Clave Contextualizadas", "Define palabras clave para buscar oportunidades")
@@ -356,17 +356,16 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                     saved_count += 1
                 
                 if saved_count > 0:
-                    st.success(f"✅ {saved_count} ticket(s) de oportunidad generado(s)")
+                    st.success(f"✅ {saved_count} ticket(s) generado(s)")
                     st.session_state.show_opportunities = True
                     st.rerun()
                 else:
-                    st.warning("⚠️ No se encontraron oportunidades con las palabras clave")
-
-
+                    st.warning("⚠️ No se encontraron oportunidades")
+    
     st.divider()
     
     # ========================================================================
-    # SECCIÓN 4: OPORTUNIDADES CON TARJETAS MODERNAS
+    # SECCIÓN 5: OPORTUNIDADES CON TARJETAS MODERNAS
     # ========================================================================
     
     selected_audio = st.session_state.get("selected_audio", "")
@@ -376,16 +375,19 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
         section_header("🎯 Tickets de Oportunidades", "Gestiona las oportunidades identificadas")
         
         for idx, opp in enumerate(opportunities):
-            # Mostrar tarjeta moderna
-            opportunity_card_modern(
-                ticket_number=opp.get('ticket_number', idx + 1),
-                title=opp.get('keyword', 'Sin título'),
-                description=opp.get('full_context', opp.get('description', 'Sin descripción')),
-                status=opp.get('status', 'new'),
-                priority=opp.get('priority', 'Medium'),
-                notes=opp.get('notes', ''),
-                created_at=opp.get('created_at', 'N/A')
-            )
+            # Encabezado del ticket
+            col_title, col_buttons = st.columns([3, 1])
+            
+            with col_title:
+                opportunity_card_modern(
+                    ticket_number=opp.get('ticket_number', idx + 1),
+                    title=opp.get('keyword', 'Sin título'),
+                    description=opp.get('full_context', opp.get('description', 'Sin descripción')),
+                    status=opp.get('status', 'new'),
+                    priority=opp.get('priority', 'Medium'),
+                    notes=opp.get('notes', ''),
+                    created_at=opp.get('created_at', 'N/A')
+                )
             
             with st.expander("✏️ Editar Detalles", expanded=False):
                 col_edit1, col_edit2 = st.columns(2)
@@ -445,7 +447,7 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
     st.divider()
     
     # ========================================================================
-    # SECCIÓN 5: CHAT CON IA
+    # SECCIÓN 6: CHAT CON IA
     # ========================================================================
     
     section_header("💬 Chat Inteligente", "Realiza preguntas sobre tu audio")
@@ -482,7 +484,7 @@ else:
 st.divider()
 
 # ============================================================================
-# SECCIÓN 6: DEBUG Y MONITOR
+# SECCIÓN 7: DEBUG Y MONITOR
 # ============================================================================
 
 with st.expander("🔧 Monitor del Sistema", expanded=False):
@@ -515,6 +517,3 @@ with st.expander("🔧 Monitor del Sistema", expanded=False):
             
     except Exception as e:
         st.error(f"❌ Error de conexión: {str(e)}")
-        st.write("1. Verifica que RLS esté DESHABILITADO en ambas tablas")
-        st.write("2. Haz click en 'Reboot app' en el menú (3 puntos arriba)")
-        st.write("3. Verifica que no haya espacios en blanco en los Secrets")
