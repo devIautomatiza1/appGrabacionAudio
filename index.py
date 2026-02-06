@@ -26,15 +26,15 @@ if not st.session_state.get("_debug_shown", False):
     print(f"[DEBUG] GEMINI_API_KEY: {'OK' if Config.get_gemini_api_key() else 'VACÍO'}...")
     
     supabase = get_supabase_client()
-    print(f"[DEBUG] Conexión Supabase: {'✓ CONECTADO' if supabase else '✗ NO CONECTADO'}")
+    print(f"[DEBUG] Conexion Supabase: {'[OK] CONECTADO' if supabase else '[FALLO] NO CONECTADO'}")
     
     if supabase:
-        st.write("✓ Conexión a Supabase verificada")
+        st.write("[OK] Conexion a Supabase verificada")
     else:
-        st.error("✗ ERROR: No hay conexión a Supabase. Verifica los secrets en Streamlit Cloud")
+        st.error("[ERROR] No hay conexion a Supabase. Verifica los secrets en Streamlit Cloud o credenciales en .env")
     
     st.session_state._debug_shown = True
-    print("[DEBUG] ===== FIN VERIFICACIÓN =====\n")
+    print("[DEBUG] ===== FIN VERIFICACION =====\n")
 
 # Inicializar servicios del backend
 audio_service = AudioService()
