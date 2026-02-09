@@ -1,4 +1,5 @@
 import google.generativeai as genai
+import os
 from pathlib import Path
 import sys
 
