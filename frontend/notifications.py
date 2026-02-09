@@ -70,15 +70,14 @@ def _display_notifications() -> None:
         "info": {"bg": "#3b82f6", "text": "white"}
     }
     
-    # Mostrar todas las notificaciones apiladas
-    notification_html = ""
+    # Crear contenedor para todas las notificaciones
     for idx, notification in enumerate(st.session_state.notifications_queue):
         color_style = colors.get(notification["type"], colors["info"])
         icon = NOTIFICATION_STYLES.get(notification["type"], {}).get("icon", "•")
-        top_position = 80 + (idx * 70)  # Espaciar verticalmente 70px cada una
+        top_position = 80 + (idx * 70)
         
-        notification_html += f"""
-        <div id="notif_{notification['id']}" style="
+        st.markdown(f"""
+        <div style="
             position: fixed;
             top: {top_position}px;
             right: 20px;
@@ -118,23 +117,7 @@ def _display_notifications() -> None:
                     onmouseout="this.style.opacity='0.8'"
             >✕</button>
         </div>
-        """
-    
-    st.markdown(f"""
-    {notification_html}
-    <style>
-        @keyframes slideInRight {{
-            from {{
-                opacity: 0;
-                transform: translateX(400px);
-            }}
-            to {{
-                opacity: 1;
-                transform: translateX(0);
-            }}
-        }}
-    </style>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
 
 
@@ -215,4 +198,19 @@ def show_info_debug(message: str) -> None:
 # Función para renderizar todas las notificaciones (llamar al inicio de index.py)
 def render_notifications() -> None:
     """Renderiza todas las notificaciones activas en la cola"""
+    # Renderizar CSS para la animación una sola vez
+    st.markdown("""
+    <style>
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+    """, unsafe_allow_html=True)
     _display_notifications()
