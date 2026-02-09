@@ -1,7 +1,15 @@
 import streamlit as st
 import os
 from datetime import datetime
+from pathlib import Path
+import sys
 from notifications import show_success, show_error, show_warning, show_info
+
+# Agregar ruta padre al path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 # Importar solo lo necesario de Supabase (sin storage3)
 try:
@@ -11,18 +19,22 @@ except ImportError:
     from postgrest import AsyncPostgrestClient
     create_client = None
     Client = None
+    logger.warning("Supabase no instalado correctamente")
 
 @st.cache_resource
 def init_supabase() -> Client:
-    """Inicializa conexión con Supabase"""
+    """
+    Inicializa conexión con Supabase.
+    
+    Returns:
+        Client: Cliente de Supabase o None si falla la conexión
+    """
     try:
         supabase_url = st.secrets.get("SUPABASE_URL")
         supabase_key = st.secrets.get("SUPABASE_KEY")
         
-        # Debug: mostrar si existen los secrets
-        if not supabase_url:
-            return None
-        if not supabase_key:
+        if not supabase_url or not supabase_key:
+            logger.error("Credenciales de Supabase no configuradas")
             return None
         
         # Limpiar espacios en blanco
@@ -30,17 +42,30 @@ def init_supabase() -> Client:
         supabase_key = supabase_key.strip()
         
         client = create_client(supabase_url, supabase_key)
+        logger.info("Conexión a Supabase establecida exitosamente")
         return client
     except Exception as e:
+        logger.error(f"Error al conectar a Supabase: {e}")
         return None
 
 def save_recording_to_db(filename: str, filepath: str, transcription: str = None):
-    """Guarda grabación en la base de datos"""
+    """
+    Guarda grabación en la base de datos.
+    
+    Args:
+        filename (str): Nombre del archivo
+        filepath (str): Ruta del archivo
+        transcription (str, optional): Transcripción del audio
+        
+    Returns:
+        str: ID del recording o None si falla
+    """
     try:
         db = init_supabase()
         if db is None:
             show_error("No se pudo conectar a Supabase")
-            return False
+            logger.error(f"Error: Supabase no inicializado para guardar: {filename}")
+            return None
         
         data = {
             "filename": filename,

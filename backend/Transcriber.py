@@ -1,53 +1,72 @@
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+from pathlib import Path
+import sys
 
-# Carga las variables de entorno desde .env
-load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY no está configurada en el archivo .env")
+# Agregar ruta padre al path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from config import GEMINI_API_KEY, TRANSCRIPTION_MODEL, MIME_TYPES
+from logger import get_logger
+
+logger = get_logger(__name__)
+
+# Configurar Gemini
 genai.configure(api_key=GEMINI_API_KEY)
 
 class Transcriber:
-  def __init__(self):
-    self.transcription = None
-
-  def transcript_audio(self, audio_path):
-    if self.transcription is None:
-      # Lee el archivo de audio
-      with open(audio_path, "rb") as audio_file:
-        audio_data = audio_file.read()
-      
-      # Determina el tipo MIME basado en la extensión
-      extension = audio_path.lower().split('.')[-1]
-      mime_types = {
-        'mp3': 'audio/mpeg',
-        'wav': 'audio/wav',
-        'm4a': 'audio/mp4',
-        'flac': 'audio/flac',
-        'webm': 'audio/webm',
-        'ogg': 'audio/ogg',
-      }
-      mime_type = mime_types.get(extension, 'audio/mpeg')
-      
-      # Sube el archivo y obtén la URI
-      audio_file_obj = genai.upload_file(audio_path, mime_type=mime_type)
-      
-      # Usa Gemini para transcribir el audio
-      model = genai.GenerativeModel('gemini-2.0-flash')
-      prompt = "Transcribe el siguiente audio en texto. Devuelve solo el texto transcrito sin explicaciones adicionales."
-      
-      response = model.generate_content([
-        prompt,
-        audio_file_obj
-      ])
-      
-      # Crea un objeto simple con atributo 'text' para mantener compatibilidad
-      class TranscriptionResult:
-        def __init__(self, text):
-          self.text = text
-      
-      self.transcription = TranscriptionResult(response.text)
+    """Transcribidor de audio usando Google Gemini"""
     
-    return self.transcription
+    def __init__(self):
+        """Inicializa el transcribidor"""
+        self.model = genai.GenerativeModel(TRANSCRIPTION_MODEL)
+        logger.info("Transcriber inicializado")
+    
+    def transcript_audio(self, audio_path):
+        """
+        Transcribe un archivo de audio.
+        
+        Args:
+            audio_path (str): Ruta al archivo de audio
+            
+        Returns:
+            TranscriptionResult: Objeto con atributo 'text' conteniendo la transcripción
+            
+        Raises:
+            FileNotFoundError: Si el archivo no existe
+            ValueError: Si el formato no es soportado
+        """
+        try:
+            # Validar que el archivo existe
+            if not os.path.exists(audio_path):
+                raise FileNotFoundError(f"Archivo no encontrado: {audio_path}")
+            
+            # Obtener extension y MIME type
+            extension = audio_path.lower().split('.')[-1]
+            mime_type = MIME_TYPES.get(extension, 'audio/mpeg')
+            
+            logger.info(f"Transcribiendo archivo: {audio_path} (tipo: {mime_type})")
+            
+            # Subir el archivo a Gemini
+            audio_file_obj = genai.upload_file(audio_path, mime_type=mime_type)
+            
+            # Transcribir usando Gemini
+            prompt = "Transcribe el siguiente audio en texto. Devuelve solo el texto transcrito sin explicaciones adicionales."
+            response = self.model.generate_content([prompt, audio_file_obj])
+            
+            # Crear objeto con resultado
+            class TranscriptionResult:
+                def __init__(self, text):
+                    self.text = text
+            
+            result = TranscriptionResult(response.text)
+            logger.info(f"Transcripción completada: {len(response.text)} caracteres")
+            return result
+            
+        except FileNotFoundError as e:
+            logger.error(f"Error: Archivo no encontrado - {audio_path}")
+            raise
+        except Exception as e:
+            logger.error(f"Error al transcribir: {str(e)}")
+            raise
+
