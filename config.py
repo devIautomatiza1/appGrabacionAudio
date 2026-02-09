@@ -50,7 +50,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     )
 
 # Configuración de la aplicación
-APP_NAME = "Sistema Control Audio Iprevencion"
+APP_NAME = "Sistema Control Reuniones"
 APP_DESCRIPTION = "Sistema inteligente de análisis de audios con IA para gestión de oportunidades"
 APP_VERSION = "1.0.0"
 
