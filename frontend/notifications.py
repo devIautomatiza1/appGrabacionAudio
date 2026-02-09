@@ -42,6 +42,7 @@ def _show_notification(message: str, notification_type: str) -> None:
 def _show_notification_expanded(message: str, notification_type: str) -> None:
     """
     Función interna para mostrar notificaciones expandidas con colores personalizados.
+    La notificación aparece flotante arriba a la derecha.
     
     Args:
         message: Texto a mostrar
@@ -61,16 +62,19 @@ def _show_notification_expanded(message: str, notification_type: str) -> None:
     
     st.markdown(f"""
     <div style="
+        position: fixed;
+        top: 80px;
+        right: 20px;
         background-color: {color_style['bg']};
         color: {color_style['text']};
-        padding: 12px 16px;
+        padding: 14px 20px;
         border-radius: 8px;
-        margin: 8px 0;
         font-weight: 600;
         font-size: 14px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        animation: slideInRight 0.3s ease-out;
-        display: inline-block;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        z-index: 9999;
+        max-width: 350px;
+        animation: slideInRight 0.4s ease-out;
     ">
         {icon} {message}
     </div>
@@ -78,7 +82,7 @@ def _show_notification_expanded(message: str, notification_type: str) -> None:
         @keyframes slideInRight {{
             from {{
                 opacity: 0;
-                transform: translateX(20px);
+                transform: translateX(400px);
             }}
             to {{
                 opacity: 1;
