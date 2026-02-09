@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 # Importar de frontend (misma carpeta)
 from AudioRecorder import AudioRecorder
 import styles
-from notifications import show_success, show_error, show_warning, show_info, show_success_expanded, show_error_expanded, show_info_expanded, show_warning_expanded
+from notifications import show_success, show_error, show_warning, show_info, show_success_expanded, show_error_expanded, show_info_expanded, show_warning_expanded, show_success_debug, show_error_debug, show_info_debug
 from utils import process_audio_file, delete_audio
 from performance import get_transcription_cached, update_opportunity_local, delete_opportunity_local, delete_keyword_local, delete_recording_local, init_optimization_state
 
@@ -535,7 +535,7 @@ st.markdown("")
 
 # SECCIÓN DEBUG
 with st.expander("🔧 DEBUG - Estado de Supabase"):
-    show_info_expanded("Probando conexión a Supabase...")
+    show_info_debug("Probando conexión a Supabase...")
     
     try:
         # Usar el cliente que ya tenemos en database.py
@@ -554,16 +554,16 @@ with st.expander("🔧 DEBUG - Estado de Supabase"):
             test_trans = supabase.table("transcriptions").select("*", count="exact").execute()
             trans_count = len(test_trans.data) if test_trans.data else 0
             
-            show_success_expanded("¡Conexión establecida correctamente!")
-            show_success_expanded(f"Grabaciones en BD: {record_count}")
-            show_success_expanded(f"Oportunidades en BD: {opp_count}")
-            show_success_expanded(f"Transcripciones en BD: {trans_count}")
+            show_success_debug("¡Conexión establecida correctamente!")
+            show_success_debug(f"Grabaciones en BD: {record_count}")
+            show_success_debug(f"Oportunidades en BD: {opp_count}")
+            show_success_debug(f"Transcripciones en BD: {trans_count}")
         else:
-            show_error_expanded("Falta SUPABASE_URL o SUPABASE_KEY en Secrets")
+            show_error_debug("Falta SUPABASE_URL o SUPABASE_KEY en Secrets")
             
     except Exception as e:
-        show_error_expanded(f"Error de conexión: {str(e)}")
-        show_info_expanded("Posibles soluciones:")
+        show_error_debug(f"Error de conexión: {str(e)}")
+        show_info_debug("Posibles soluciones:")
         st.write("1. Verifica que RLS esté DESHABILITADO en ambas tablas")
         st.write("2. Haz click en 'Reboot app' en el menú (3 puntos arriba)")
         st.write("3. Verifica que no haya espacios en blanco en los Secrets")

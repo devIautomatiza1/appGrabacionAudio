@@ -91,3 +91,34 @@ def show_info_expanded(message: str) -> None:
 def show_warning_expanded(message: str) -> None:
     """Muestra un mensaje de advertencia en toast arriba a la derecha"""
     _show_notification_expanded(message, "warning")
+
+
+# Funciones de DEBUG - Para cuadros expandidos abajo
+def show_success_debug(message: str) -> None:
+    """Muestra un mensaje de éxito en cuadro expandido (para debug)"""
+    icon = NOTIFICATION_STYLES.get("success", {}).get("icon", "•")
+    st.markdown(f"""
+    <div class="notification-expanded notification-expanded-success">
+        {icon} {message}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def show_error_debug(message: str) -> None:
+    """Muestra un mensaje de error en cuadro expandido (para debug)"""
+    icon = NOTIFICATION_STYLES.get("error", {}).get("icon", "•")
+    st.markdown(f"""
+    <div class="notification-expanded notification-expanded-error">
+        {icon} {message}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def show_info_debug(message: str) -> None:
+    """Muestra un mensaje de información en cuadro expandido (para debug)"""
+    icon = NOTIFICATION_STYLES.get("info", {}).get("icon", "•")
+    st.markdown(f"""
+    <div class="notification-expanded notification-expanded-info">
+        {icon} {message}
+    </div>
+    """, unsafe_allow_html=True)
