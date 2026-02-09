@@ -114,30 +114,31 @@ with col2:
     if recordings:
         show_info(f"Total: {len(recordings)} audio(s)")
         
-        # BÚSQUEDA Y FILTRO DE AUDIOS
+        # BÚSQUEDA Y FILTRO DE AUDIOS EN TIEMPO REAL
         search_query = st.text_input(
             "🔍 Buscar audio:",
             placeholder="Nombre del archivo...",
             key="audio_search"
         )
         
-        # Limpiar búsqueda si cambia el audio seleccionado
-        if st.session_state.get("last_selected") != st.session_state.get("selected_audio"):
-            st.session_state.last_selected = st.session_state.get("selected_audio")
-            search_query = ""  # Reset búsqueda
-        
-        # Filtrar audios según búsqueda
+        # Filtrar audios EN TIEMPO REAL mientras escribe
         if search_query.strip():
             filtered_recordings = [
                 r for r in recordings 
                 if search_query.lower() in r.lower()
             ]
+            
+            # Mostrar resultados en tiempo real
+            if filtered_recordings:
+                st.markdown(f"**📌 {len(filtered_recordings)} resultado(s):**")
+                for recording in filtered_recordings:
+                    display_name = recording.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", "")
+                    is_transcribed = " ✓ Transcrito" if db_utils.get_transcription_by_filename(recording) else ""
+                    st.caption(f"🎵 {display_name}{is_transcribed}")
+            else:
+                show_warning(f"No se encontraron audios con '{search_query}'")
         else:
             filtered_recordings = recordings
-        
-        # Mostrar resultados de búsqueda
-        if search_query.strip() and not filtered_recordings:
-            show_warning(f"No se encontraron audios con '{search_query}'")
         
         # Tabs para diferentes vistas
         tab1, tab2 = st.tabs(["Transcribir", "Gestión en lote"])
