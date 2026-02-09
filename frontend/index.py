@@ -313,18 +313,17 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
     if st.session_state.keywords:
         st.markdown('<h4 style="color: white; margin-top: 20px; margin-bottom: 16px;">Palabras clave configuradas</h4>', unsafe_allow_html=True)
         
-        # Mostrar palabras clave como badges en una fila
-        keywords_html = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">'
+        # Mostrar palabras clave con botones de eliminar al lado
         for keyword in st.session_state.keywords.keys():
-            keywords_html += f'<div style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0052CC 0%, #003d99 100%); padding: 8px 12px; border-radius: 6px; color: white; font-weight: 500; font-size: 14px;"><span>{keyword}</span></div>'
-        keywords_html += '</div>'
-        st.markdown(keywords_html, unsafe_allow_html=True)
-        
-        # Botones para eliminar en una fila
-        cols = st.columns(len(st.session_state.keywords))
-        for idx, (keyword, col) in enumerate(zip(st.session_state.keywords.keys(), cols)):
-            with col:
-                if st.button("Eliminar", key=f"del_{keyword}", use_container_width=True):
+            col_badge, col_delete = st.columns([4, 1])
+            
+            with col_badge:
+                # Badge HTML con palabra
+                badge_html = f'<div style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0052CC 0%, #003d99 100%); padding: 8px 12px; border-radius: 6px; color: white; font-weight: 500; font-size: 14px;">{keyword}</div>'
+                st.markdown(badge_html, unsafe_allow_html=True)
+            
+            with col_delete:
+                if st.button("✕", key=f"del_{keyword}", use_container_width=True, help="Eliminar"):
                     del st.session_state.keywords[keyword]
                     st.rerun()
         

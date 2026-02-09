@@ -358,6 +358,16 @@ def get_styles():
     .stButton > button:hover {
         transform: translateY(-1px);
     }
+
+    /* Botones de eliminación (X rojo) */
+    button[key*="del_"] {
+        color: #EA001B !important;
+        border-color: #EA001B !important;
+    }
+
+    button[key*="del_"]:hover {
+        background-color: rgba(234, 0, 27, 0.1) !important;
+    }
     </style>
     """
 
