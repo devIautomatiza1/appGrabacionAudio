@@ -268,6 +268,10 @@ with col2:
     else:
         show_info("No hay audios guardados. Sube un archivo.")
 
+st.markdown("")
+st.markdown("")
+st.markdown("")
+
 # SECCIÓN DE TRANSCRIPCIÓN
 
 if st.session_state.get("chat_enabled", False) and st.session_state.get("contexto"):
@@ -339,6 +343,10 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                     st.rerun()
                 else:
                     show_warning("No se encontraron oportunidades con las palabras clave")
+
+st.markdown("")
+st.markdown("")
+st.markdown("")
 
 # SECCIÓN DE OPORTUNIDADES
 
@@ -430,6 +438,10 @@ if st.session_state.get("chat_enabled", False):
                                 st.toast("Cancelado")
                                 st.rerun()  # Limpiar UI de confirmación
 
+st.markdown("")
+st.markdown("")
+st.markdown("")
+
 # SECCIÓN DE CHAT
 
 if st.session_state.get("chat_enabled", False):
@@ -495,6 +507,10 @@ if st.session_state.get("chat_enabled", False):
                 show_error(f"Error al generar respuesta: {e}")
 else:
     show_info("Carga un audio y transcríbelo para habilitar el chat.")
+
+st.markdown("")
+st.markdown("")
+st.markdown("")
 
 # SECCIÓN DEBUG
 with st.expander("🔧 DEBUG - Estado de Supabase"):

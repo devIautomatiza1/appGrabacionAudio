@@ -306,6 +306,22 @@ def get_styles():
     .avatar-spin {
         animation: avatar-spin 3s linear infinite;
     }
+
+    /* Espaciado mejorado para headers */
+    h1 {
+        margin-top: 40px;
+        margin-bottom: 16px;
+    }
+
+    h2 {
+        margin-top: 32px;
+        margin-bottom: 12px;
+    }
+
+    h3 {
+        margin-top: 24px;
+        margin-bottom: 10px;
+    }
     </style>
     """
 
