@@ -26,43 +26,49 @@ NOTIFICATION_EXPANDED_STYLES = {
 if "notifications_queue" not in st.session_state:
     st.session_state.notifications_queue = []
 
-# Inyectar CSS y JavaScript una sola vez
 if "notifications_css_js_injected" not in st.session_state:
     st.session_state.notifications_css_js_injected = False
-    st.markdown("""
-    <script>
-        function closeNotification(notificationId) {
-            let element = document.getElementById('notif_' + notificationId);
-            if (element) {
-                element.style.display = 'none';
+
+
+def _inject_css_and_js() -> None:
+    """Inyecta CSS y JavaScript una sola vez"""
+    if not st.session_state.notifications_css_js_injected:
+        st.markdown("""
+        <script>
+            function closeNotification(notificationId) {
+                let element = document.getElementById('notif_' + notificationId);
+                if (element) {
+                    element.style.display = 'none';
+                }
             }
-        }
-    </script>
-    <style>
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(400px);
+        </script>
+        <style>
+            @keyframes slideInRight {
+                from {
+                    opacity: 0;
+                    transform: translateX(400px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
             }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    st.session_state.notifications_css_js_injected = True
+        </style>
+        """, unsafe_allow_html=True)
+        st.session_state.notifications_css_js_injected = True
 
 
 def _add_notification_to_queue(message: str, notification_type: str, duration: int = 4) -> None:
     """
-    Añade una notificación a la cola y la renderiza inmediatamente.
+    Añade una notificación a la cola.
     
     Args:
         message: Texto a mostrar
         notification_type: Tipo de notificación ('success', 'error', 'info', 'warning')
         duration: Segundos que permanece visible (default: 4)
     """
+    _inject_css_and_js()
+    
     notification_id = str(uuid.uuid4())
     notification = {
         "id": notification_id,
@@ -74,13 +80,6 @@ def _add_notification_to_queue(message: str, notification_type: str, duration: i
     st.session_state.notifications_queue.append(notification)
     
     # Renderizar la notificación inmediatamente
-    _render_single_notification(notification, len(st.session_state.notifications_queue) - 1)
-
-
-def _render_single_notification(notification: dict, idx: int) -> None:
-    """
-    Renderiza una única notificación.
-    """
     colors = {
         "success": {"bg": "#10b981", "text": "white"},
         "error": {"bg": "#ef4444", "text": "white"},
@@ -88,12 +87,16 @@ def _render_single_notification(notification: dict, idx: int) -> None:
         "info": {"bg": "#3b82f6", "text": "white"}
     }
     
-    color_style = colors.get(notification["type"], colors["info"])
-    icon = NOTIFICATION_STYLES.get(notification["type"], {}).get("icon", "•")
-    top_position = 80 + (idx * 70)
-    notif_id = notification["id"]
+    color_style = colors.get(notification_type, colors["info"])
+    icon = NOTIFICATION_STYLES.get(notification_type, {}).get("icon", "•")
     
-    html_code = f'<div id="notif_{notif_id}" style="position: fixed; top: {top_position}px; right: 20px; background-color: {color_style["bg"]}; color: {color_style["text"]}; padding: 14px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); z-index: {9999 - idx}; max-width: 350px; animation: slideInRight 0.4s ease-out; display: flex; align-items: center; justify-content: space-between; gap: 12px;"><span>{icon} {notification["message"]}</span><button onclick="closeNotification(\'{notif_id}\')" style="background: none; border: none; color: {color_style["text"]}; font-size: 18px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.8\'">✕</button></div>'
+    # Calcular posición basada en el número de notificaciones visibles
+    now = datetime.now()
+    visible_count = sum(1 for n in st.session_state.notifications_queue 
+                       if now - n["created_at"] < timedelta(seconds=n["duration"]))
+    top_position = 80 + ((visible_count - 1) * 70)
+    
+    html_code = f'<div id="notif_{notification_id}" style="position: fixed; top: {top_position}px; right: 20px; background-color: {color_style["bg"]}; color: {color_style["text"]}; padding: 14px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); z-index: {9999 - visible_count}; max-width: 350px; animation: slideInRight 0.4s ease-out; display: flex; align-items: center; justify-content: space-between; gap: 12px;"><span>{icon} {message}</span><button onclick="closeNotification(\'{notification_id}\')" style="background: none; border: none; color: {color_style["text"]}; font-size: 18px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.8\'">✕</button></div>'
     
     st.markdown(html_code, unsafe_allow_html=True)
 
