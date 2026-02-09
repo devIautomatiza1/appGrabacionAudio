@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import List, Optional
 import streamlit as st
 import sys
 
@@ -15,13 +16,13 @@ logger = get_logger(__name__)
 class AudioRecorder:
     """Gestor de grabaciones de audio"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Inicializa el grabador de audio"""
         # Crear directorio si no existe
         RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
         logger.info("AudioRecorder inicializado")
     
-    def get_recordings_list(self):
+    def get_recordings_list(self) -> List[str]:
         """
         Obtiene lista de audios grabados localmente.
         
@@ -36,7 +37,7 @@ class AudioRecorder:
             logger.error(f"Error al leer directorio de grabaciones: {e}")
             return []
     
-    def get_recordings_from_supabase(self):
+    def get_recordings_from_supabase(self) -> List[str]:
         """
         Obtiene lista de audios desde Supabase.
         
@@ -71,7 +72,7 @@ class AudioRecorder:
             logger.error(f"Error obteniendo grabaciones de Supabase: {e}")
             return []
     
-    def validate_audio_file(self, audio_data, filename):
+    def validate_audio_file(self, audio_data: bytes, filename: str) -> None:
         """
         Valida un archivo de audio antes de guardarlo.
         
@@ -98,7 +99,7 @@ class AudioRecorder:
         
         logger.info(f"Validación exitosa para: {filename} ({size_mb:.1f}MB)")
     
-    def save_recording(self, audio_data, filename=None):
+    def save_recording(self, audio_data: bytes, filename: Optional[str] = None) -> str:
         """
         Guarda un archivo de audio grabado.
         
@@ -137,7 +138,7 @@ class AudioRecorder:
             logger.error(f"Error al guardar archivo: {e}")
             raise
     
-    def delete_recording(self, filename):
+    def delete_recording(self, filename: str) -> bool:
         """
         Elimina un archivo de audio.
         
@@ -159,7 +160,7 @@ class AudioRecorder:
             logger.error(f"Error al eliminar archivo {filename}: {e}")
             return False
     
-    def get_recording_path(self, filename):
+    def get_recording_path(self, filename: str) -> str:
         """
         Obtiene la ruta completa de un archivo de audio.
         

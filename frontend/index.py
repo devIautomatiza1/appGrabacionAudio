@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import sys
+import re
 from pathlib import Path
 
 # Agregar carpetas al path para importar módulos
@@ -125,9 +126,11 @@ with col2:
         
         # Filtrar audios EN TIEMPO REAL mientras escribe
         if search_query.strip():
+            # Escapar caracteres especiales para evitar problemas con regex
+            search_safe = re.escape(search_query.strip())
             filtered_recordings = [
                 r for r in recordings 
-                if search_query.lower() in r.lower()
+                if search_safe.lower() in r.lower()
             ]
             
             # Mostrar resultados en tiempo real

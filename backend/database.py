@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Optional, List, Dict, Any
 import sys
 
 # Agregar ruta padre al path
@@ -47,7 +48,7 @@ def init_supabase() -> Client:
         logger.error(f"Error al conectar a Supabase: {e}")
         return None
 
-def save_recording_to_db(filename: str, filepath: str, transcription: str = None):
+def save_recording_to_db(filename: str, filepath: str, transcription: Optional[str] = None) -> Optional[str]:
     """
     Guarda grabación en la base de datos.
     
@@ -85,7 +86,7 @@ def save_recording_to_db(filename: str, filepath: str, transcription: str = None
         logger.error(f"Error guardando: {str(e)}")
         return None
 
-def get_all_recordings():
+def get_all_recordings() -> List[Dict[str, Any]]:
     """Obtiene todas las grabaciones de la BD"""
     try:
         db = init_supabase()
@@ -98,7 +99,7 @@ def get_all_recordings():
         logger.error(f"Error obteniendo grabaciones: {e}")
         return []
 
-def update_transcription(recording_id: str, transcription: str):
+def update_transcription(recording_id: str, transcription: str) -> bool:
     """Actualiza la transcripción de una grabación"""
     try:
         db = init_supabase()
@@ -115,7 +116,7 @@ def update_transcription(recording_id: str, transcription: str):
         logger.error(f"Error actualizando transcripción: {e}")
         return False
 
-def save_opportunity(recording_id: str, title: str, description: str):
+def save_opportunity(recording_id: str, title: str, description: str) -> bool:
     """Guarda una oportunidad asociada a una grabación"""
     try:
         db = init_supabase()
@@ -135,7 +136,7 @@ def save_opportunity(recording_id: str, title: str, description: str):
         logger.error(f"Error guardando oportunidad: {e}")
         return False
 
-def get_opportunities_by_recording(recording_id: str):
+def get_opportunities_by_recording(recording_id: str) -> List[Dict[str, Any]]:
     """Obtiene las oportunidades de una grabación"""
     try:
         db = init_supabase()
@@ -147,7 +148,7 @@ def get_opportunities_by_recording(recording_id: str):
     except Exception as e:
         logger.error(f"Error obteniendo oportunidades: {e}")
         return []
-def delete_recording_from_db(recording_id: int):
+def delete_recording_from_db(recording_id: int) -> bool:
     """Elimina una grabación de la base de datos"""
     try:
         db = init_supabase()
@@ -169,7 +170,7 @@ def delete_recording_from_db(recording_id: int):
         logger.error(f"Error eliminando grabación: {str(e)}")
         return False
 
-def delete_opportunities_by_recording(recording_id: int):
+def delete_opportunities_by_recording(recording_id: int) -> bool:
     """Elimina todas las oportunidades asociadas a una grabación"""
     try:
         db = init_supabase()
@@ -188,7 +189,7 @@ def delete_opportunities_by_recording(recording_id: int):
     except Exception as e:
         return False
 
-def delete_recording_by_filename(filename: str):
+def delete_recording_by_filename(filename: str) -> bool:
     """Busca y elimina una grabación por nombre de archivo"""
     try:
         db = init_supabase()
@@ -220,7 +221,7 @@ def delete_recording_by_filename(filename: str):
 # FUNCIONES PARA TRANSCRIPCIONES
 # ============================================================================
 
-def save_transcription(recording_filename: str, content: str, language: str = "es"):
+def save_transcription(recording_filename: str, content: str, language: str = "es") -> Optional[str]:
     """Guarda una transcripción en Supabase asociada a un recording"""
     try:
         db = init_supabase()
@@ -265,7 +266,7 @@ def save_transcription(recording_filename: str, content: str, language: str = "e
         return None
 
 
-def get_transcription_by_filename(recording_filename: str):
+def get_transcription_by_filename(recording_filename: str) -> Optional[Dict[str, Any]]:
     """Obtiene la transcripción más reciente de un audio por filename"""
     try:
         db = init_supabase()
@@ -294,7 +295,7 @@ def get_transcription_by_filename(recording_filename: str):
         return None
 
 
-def delete_transcription_by_id(transcription_id: str):
+def delete_transcription_by_id(transcription_id: str) -> bool:
     """Elimina una transcripción específica por ID"""
     try:
         db = init_supabase()

@@ -1,8 +1,8 @@
-"""
-utils.py - Utilidades comunes para la aplicación frontend
+"""\nutilities.py - Utilidades comunes para la aplicación frontend
 """
 from datetime import datetime
 import hashlib
+from typing import Tuple, Optional, Any
 import streamlit as st
 from pathlib import Path
 import sys
@@ -14,7 +14,7 @@ from frontend.notifications import show_success, show_error
 logger = get_logger(__name__)
 
 
-def process_audio_file(audio_bytes, filename, recorder, db_utils):
+def process_audio_file(audio_bytes: bytes, filename: str, recorder: Any, db_utils: Any) -> Tuple[bool, Optional[str]]:
     """
     Procesa un archivo de audio (grabación o carga).
     
@@ -75,7 +75,7 @@ def process_audio_file(audio_bytes, filename, recorder, db_utils):
         return False, None
 
 
-def delete_audio(filename, recorder, db_utils):
+def delete_audio(filename: str, recorder: Any, db_utils: Any) -> bool:
     """
     Elimina un archivo de audio de forma segura.
     

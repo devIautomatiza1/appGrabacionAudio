@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import os
 from pathlib import Path
+from typing import NamedTuple
 import sys
 
 # Agregar ruta padre al path
@@ -16,12 +17,12 @@ genai.configure(api_key=GEMINI_API_KEY)
 class Transcriber:
     """Transcribidor de audio usando Google Gemini"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Inicializa el transcribidor"""
         self.model = genai.GenerativeModel(TRANSCRIPTION_MODEL)
         logger.info("Transcriber inicializado")
     
-    def transcript_audio(self, audio_path):
+    def transcript_audio(self, audio_path: str) -> 'TranscriptionResult':
         """
         Transcribe un archivo de audio.
         

@@ -1,5 +1,6 @@
 import google.generativeai as genai
 from pathlib import Path
+from typing import Dict, Optional, Union
 import sys
 
 # Agregar ruta padre al path
@@ -16,12 +17,12 @@ genai.configure(api_key=GEMINI_API_KEY)
 class Model:
     """Modelo de chat inteligente usando Google Gemini"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Inicializa el modelo de chat"""
         self.model = genai.GenerativeModel(CHAT_MODEL)
         logger.info("Modelo de chat inicializado")
     
-    def call_model(self, question, context, keywords=None):
+    def call_model(self, question: str, context: str, keywords: Optional[Union[Dict, list]] = None) -> str:
         """
         Genera una respuesta basada en una pregunta y contexto.
         

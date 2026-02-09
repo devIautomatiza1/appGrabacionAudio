@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 import streamlit as st
 import sys
 
@@ -17,7 +18,7 @@ BASE_DIR = Path(__file__).parent.parent / "data"
 OPPORTUNITIES_DIR = BASE_DIR / "opportunities"
 
 class OpportunitiesManager:
-    def __init__(self):
+    def __init__(self) -> None:
         OPPORTUNITIES_DIR.mkdir(parents=True, exist_ok=True)
         self.db = None
         try:
@@ -26,7 +27,7 @@ class OpportunitiesManager:
         except Exception as e:
             logger.warning(f"Failed to initialize Supabase client: {str(e)}. Using local fallback.")
     
-    def get_recording_id(self, filename):
+    def get_recording_id(self, filename: str) -> Optional[str]:
         """Obtiene el ID del recording por nombre de archivo"""
         try:
             if not self.db:
@@ -39,7 +40,7 @@ class OpportunitiesManager:
             logger.error(f"Error retrieving recording ID for {filename}: {str(e)}")
         return None
     
-    def extract_opportunities(self, transcription, keywords_list):
+    def extract_opportunities(self, transcription: str, keywords_list: List[str]) -> List[Dict]:
         """Extrae oportunidades de negocio basadas en palabras clave encontradas en la transcripción"""
         opportunities = []
         
@@ -87,7 +88,7 @@ class OpportunitiesManager:
         
         return opportunities
     
-    def save_opportunity(self, opportunity, audio_filename):
+    def save_opportunity(self, opportunity: Dict, audio_filename: str) -> bool:
         """Guarda una oportunidad en Supabase"""
         try:
             if not self.db:
@@ -146,7 +147,7 @@ class OpportunitiesManager:
         
         return str(filepath)
     
-    def load_opportunities(self, audio_filename):
+    def load_opportunities(self, audio_filename: str) -> List[Dict]:
         """Carga todas las oportunidades asociadas a un audio desde Supabase"""
         opportunities = []
         
@@ -203,7 +204,7 @@ class OpportunitiesManager:
         
         return opportunities
     
-    def update_opportunity(self, opportunity, audio_filename):
+    def update_opportunity(self, opportunity: Dict, audio_filename: str) -> bool:
         """Actualiza una oportunidad en Supabase"""
         try:
             if not self.db:
@@ -242,7 +243,7 @@ class OpportunitiesManager:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(opportunity, f, ensure_ascii=False, indent=2)
     
-    def delete_opportunity(self, opportunity_id, audio_filename):
+    def delete_opportunity(self, opportunity_id: str, audio_filename: str) -> bool:
         """Elimina una oportunidad de Supabase"""
         try:
             if self.db and opportunity_id:
