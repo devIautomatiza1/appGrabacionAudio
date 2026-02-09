@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 # Importar de frontend (misma carpeta)
 from AudioRecorder import AudioRecorder
 import styles
-from notifications import show_success, show_error, show_warning, show_info, show_success_expanded, show_error_expanded, show_info_expanded
+from notifications import show_success, show_error, show_warning, show_info, show_success_expanded, show_error_expanded, show_info_expanded, show_warning_expanded
 from utils import process_audio_file, delete_audio
 from performance import get_transcription_cached, update_opportunity_local, delete_opportunity_local, delete_keyword_local, delete_recording_local, init_optimization_state
 
@@ -118,7 +118,7 @@ with col2:
     st.session_state.recordings = recordings
     
     if recordings:
-        show_info(f"Total: {len(recordings)} audio(s)")
+        show_info_expanded(f"Total: {len(recordings)} audio(s)")
         
         # BÚSQUEDA Y FILTRO DE AUDIOS EN TIEMPO REAL
         search_query = st.text_input(
@@ -146,7 +146,7 @@ with col2:
                     is_transcribed = " ✓ Transcrito" if transcription else ""
                     st.caption(f"🎵 {display_name}{is_transcribed}")
             else:
-                show_warning(f"No se encontraron audios con '{search_query}'")
+                show_warning_expanded(f"No se encontraron audios con '{search_query}'")
         else:
             filtered_recordings = recordings
         
@@ -172,7 +172,7 @@ with col2:
                         st.session_state.loaded_audio = selected_audio
                         st.session_state.chat_enabled = True
                         st.session_state.keywords = {}
-                        show_info("Transcripción cargada desde Supabase")
+                        show_info_expanded("Transcripción cargada desde Supabase")
                 
                 col_play, col_transcribe, col_delete = st.columns([1, 1, 1])
                 
@@ -202,9 +202,9 @@ with col2:
                                     language="es"
                                 )
                                 
-                                show_success("Transcripción completada y guardada en Supabase")
+                                show_success_expanded("Transcripción completada y guardada en Supabase")
                             except Exception as e:
-                                show_error(f"Error al transcribir: {e}")
+                                show_error_expanded(f"Error al transcribir: {e}")
                 
                 with col_delete:
                     if st.button("Eliminar", key=f"delete_{selected_audio}"):
@@ -240,7 +240,7 @@ with col2:
             )
             
             if audios_to_delete:
-                show_warning(f"Vas a eliminar {len(audios_to_delete)} audio(s)")
+                show_warning_expanded(f"Vas a eliminar {len(audios_to_delete)} audio(s)")
                 
                 st.write("**Audios seleccionados:**")
                 for audio in audios_to_delete:
@@ -268,7 +268,7 @@ with col2:
                 with col_cancel:
                     st.write("")
     else:
-        show_info("No hay audios guardados. Sube un archivo.")
+        show_info_expanded("No hay audios guardados. Sube un archivo.")
 
 st.markdown("")
 st.markdown("")
@@ -300,16 +300,16 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                 
                 # Validar que no esté vacío después de limpiar
                 if not cleaned_keyword:
-                    show_error("La palabra clave no puede estar vacía")
+                    show_error_expanded("La palabra clave no puede estar vacía")
                 # Validar que no sea duplicada
                 elif cleaned_keyword in st.session_state.keywords:
-                    show_warning(f"'{cleaned_keyword}' ya fue añadida")
+                    show_warning_expanded(f"'{cleaned_keyword}' ya fue añadida")
                 else:
                     st.session_state.keywords[cleaned_keyword] = cleaned_keyword
-                    show_success(f"'{cleaned_keyword}' añadida")
+                    show_success_expanded(f"'{cleaned_keyword}' añadida")
                     st.rerun()
             else:
-                show_error("Ingresa una palabra clave")
+                show_error_expanded("Ingresa una palabra clave")
     
     # Mostrar palabras clave
     if st.session_state.keywords:
@@ -346,10 +346,10 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                     saved_count += 1
                 
                 if saved_count > 0:
-                    show_success(f"{saved_count} ticket(s) de oportunidad generado(s)")
+                    show_success_expanded(f"{saved_count} ticket(s) de oportunidad generado(s)")
                     st.session_state.show_opportunities = True
                 else:
-                    show_warning("No se encontraron oportunidades con las palabras clave")
+                    show_warning_expanded("No se encontraron oportunidades con las palabras clave")
 
 st.markdown("")
 st.markdown("")
@@ -468,7 +468,7 @@ if st.session_state.get("chat_enabled", False):
     st.caption(f"Conversando sobre: {st.session_state.get('selected_audio', 'audio')}")
     
     if st.session_state.get("keywords"):
-        show_info(f"Palabras clave activas: {', '.join(st.session_state.keywords.keys())}")
+        show_info_expanded(f"Palabras clave activas: {', '.join(st.session_state.keywords.keys())}")
     
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
@@ -527,7 +527,7 @@ if st.session_state.get("chat_enabled", False):
             except Exception as e:
                 show_error(f"Error al generar respuesta: {e}")
 else:
-    show_info("Carga un audio y transcríbelo para habilitar el chat.")
+    show_info_expanded("Carga un audio y transcríbelo para habilitar el chat.")
 
 st.markdown("")
 st.markdown("")

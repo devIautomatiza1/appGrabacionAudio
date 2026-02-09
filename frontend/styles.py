@@ -233,6 +233,12 @@ def get_styles():
         color: #2563eb;
     }
 
+    .notification-expanded-warning {
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%);
+        border-left: 5px solid #fbbf24;
+        color: #d97706;
+    }
+
     /* Estilos para el chat */
     .chat-container {
         display: flex;

@@ -94,3 +94,8 @@ def show_error_expanded(message: str) -> None:
 def show_info_expanded(message: str) -> None:
     """Muestra un mensaje de información visible completo (para debug)"""
     _show_notification_expanded(message, "info")
+
+
+def show_warning_expanded(message: str) -> None:
+    """Muestra un mensaje de advertencia visible completo"""
+    st.warning(message)
