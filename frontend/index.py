@@ -30,10 +30,23 @@ import database as db_utils
 from datetime import datetime
 
 # Configuración inicial de la interfaz de usuario
-st.set_page_config(layout="wide", page_title=APP_NAME)
+st.set_page_config(layout="wide", page_title=APP_NAME, initial_sidebar_state="collapsed")
 
 # Cargar estilos CSS desde archivo
 st.markdown(styles.get_styles(), unsafe_allow_html=True)
+
+# Header Profesional SaaS
+st.markdown(f"""
+<div class="navbar">
+    <div class="navbar-content">
+        <div class="logo">🎯 {APP_NAME}</div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            Sistema Activo
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # Inicializar objetos
 recorder = AudioRecorder()
@@ -66,17 +79,23 @@ if "opp_delete_confirmation" not in st.session_state:
 # Inicializar optimizaciones de performance
 init_optimization_state()
 
-st.title(APP_NAME)
+# Hero Section
+st.markdown("""
+<div>
+    <h1 class="hero-title">✨ Sistema de Control de Reuniones</h1>
+    <p class="hero-subtitle">Graba, transcribe y analiza tus reuniones con IA. Extrae automáticamente oportunidades de negocio.</p>
+</div>
+""", unsafe_allow_html=True)
 
-# Crear dos columnas principales para la carga
-col1, col2 = st.columns([1, 1])
+# Sección de carga - Dos columnas
+col1, col2 = st.columns([1, 1], gap="large")
 
 with col1:
-    # GRABADORA DE AUDIO EN VIVO (nativa de Streamlit)
-    st.markdown('<h3 style="color: white;">Grabadora en vivo</h3>', unsafe_allow_html=True)
-    st.caption("Graba directamente desde tu micrófono (sin interrupciones)")
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🎤 Grabadora en Vivo</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subtitle">Graba directamente desde tu micrófono sin interrupciones</div>', unsafe_allow_html=True)
     
-    audio_data = st.audio_input("Presiona el botón para grabar:", key=f"audio_recorder_{st.session_state.record_key_counter}")
+    audio_data = st.audio_input("", key=f"audio_recorder_{st.session_state.record_key_counter}", label_visibility="collapsed")
     
     # Procesar audio grabado SOLO UNA VEZ por hash
     if audio_data is not None:
@@ -91,12 +110,18 @@ with col1:
                 # Reset el widget para que no se procese nuevamente
                 st.session_state.record_key_counter += 1
     
+    st.markdown("", unsafe_allow_html=True)
+    st.markdown('<div style="margin-top: 24px;"></div>', unsafe_allow_html=True)
+    
     # Opción de subir archivo
-    st.markdown('<h3 style="color: white;">Sube un archivo de audio</h3>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title" style="margin-top: 32px;">📁 Sube un Archivo</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subtitle">Carga un archivo de audio para procesar</div>', unsafe_allow_html=True)
+    
     uploaded_file = st.file_uploader(
         "Selecciona un archivo de audio",
         type=list(AUDIO_EXTENSIONS),
-        key=f"audio_uploader_{st.session_state.upload_key_counter}"
+        key=f"audio_uploader_{st.session_state.upload_key_counter}",
+        label_visibility="collapsed"
     )
     
     if uploaded_file is not None:
@@ -109,9 +134,12 @@ with col1:
             if success:
                 # Reset el widget para que no se procese nuevamente
                 st.session_state.upload_key_counter += 1
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
-    st.markdown('<h3 style="color: white;">Audios Guardados</h3>', unsafe_allow_html=True)
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🎙️ Audios Guardados</div>', unsafe_allow_html=True)
     
     # Refresh de la lista de audios desde Supabase cada vez que se renderiza (para sincronizar)
     recordings = recorder.get_recordings_from_supabase()
@@ -119,7 +147,6 @@ with col2:
     
     if recordings:
         show_info_expanded(f"Total: {len(recordings)} audio(s)")
-        
         # BÚSQUEDA Y FILTRO DE AUDIOS EN TIEMPO REAL
         search_query = st.text_input(
             "🔍 Buscar audio:",
@@ -269,6 +296,8 @@ with col2:
                     st.write("")
     else:
         show_info_expanded("No hay audios guardados. Sube un archivo.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("")
 st.markdown("")
