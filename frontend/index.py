@@ -31,8 +31,19 @@ from datetime import datetime
 # Configuración inicial de la interfaz de usuario
 st.set_page_config(layout="wide", page_title=APP_NAME)
 
-# Cargar estilos CSS desde archivo
-st.markdown(styles.get_styles(), unsafe_allow_html=True)
+# Inicializar tema en session_state
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
+
+# Cargar estilos CSS con el tema actual
+st.markdown(styles.get_styles(theme=st.session_state.theme), unsafe_allow_html=True)
+
+# Botón para cambiar tema (esquina superior derecha)
+col_theme_spacer, col_theme_btn = st.columns([0.85, 0.15])
+with col_theme_btn:
+    if st.button("🌙 Oscuro" if st.session_state.theme == "light" else "☀️ Claro", use_container_width=True):
+        st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
+        st.rerun()
 
 # Inicializar objetos
 recorder = AudioRecorder()
