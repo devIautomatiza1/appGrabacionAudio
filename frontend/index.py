@@ -362,7 +362,7 @@ if st.session_state.get("chat_enabled", False):
     opportunities = opp_manager.load_opportunities(selected_audio)
     
     if opportunities:
-        st.header("🎟️ Tickets de Oportunidades de Negocio")
+        st.markdown('<h2 style="color: white;">Tickets de Oportunidades de Negocio</h2>', unsafe_allow_html=True)
         
         for idx, opp in enumerate(opportunities):
             # Mostrar número de ocurrencia si hay múltiples
@@ -370,7 +370,8 @@ if st.session_state.get("chat_enabled", False):
             if opp.get('occurrence', 1) > 1:
                 occurrence_text = f" (Ocurrencia #{opp['occurrence']})"
             
-            with st.expander(f"📌 {opp['keyword']}{occurrence_text} - {opp['created_at']}", expanded=False):
+            keyword_display = f'<span style="color: #0052CC; font-weight: 600;">{opp["keyword"]}</span>'
+            with st.expander(f"{keyword_display} {occurrence_text} - {opp['created_at']}", expanded=False):
                 col_opp1, col_opp2 = st.columns([2, 1])
                 
                 with col_opp1:
@@ -390,32 +391,40 @@ if st.session_state.get("chat_enabled", False):
                     )
                 
                 with col_opp2:
-                    st.write("**Estado:**")
-                    status_options = ["new", "in_progress", "closed", "won"]
-                    new_status = st.selectbox(
+                    st.write("**Estad{"Nuevo": "new", "En progreso": "in_progress", "Cerrado": "closed", "Ganado": "won"}
+                    status_display_names = list(status_options.keys())
+                    current_status = opp.get('status', 'new')
+                    current_status_label = [k for k, v in status_options.items() if v == current_status][0]
+                    selected_status_label = st.selectbox(
                         "Cambiar estado",
-                        status_options,
-                        index=status_options.index(opp.get('status', 'new')),
+                        status_display_names,
+                        index=status_display_names.index(current_status_label),
                         key=f"status_{idx}",
                         label_visibility="collapsed"
                     )
+                    new_status = status_options[selected_status_label]
                     
                     st.write("**Prioridad:**")
-                    priority_options = ["Low", "Medium", "High"]
-                    new_priority = st.selectbox(
+                    priority_options = {"Baja": "Low", "Media": "Medium", "Alta": "High"}
+                    priority_display_names = list(priority_options.keys())
+                    current_priority = opp.get('priority', 'Medium')
+                    current_priority_label = [k for k, v in priority_options.items() if v == current_priority][0]
+                    selected_priority_label = st.selectbox(
                         "Cambiar prioridad",
-                        priority_options,
-                        index=priority_options.index(opp.get('priority', 'Medium')),
-                        key=f"priority_{idx}",
-                        label_visibility="collapsed"
-                    )
-                
-                col_save, col_delete = st.columns(2)
-                with col_save:
-                    if st.button("💾 Guardar cambios", key=f"save_{idx}", use_container_width=True):
+                        priority_display_names,
+                        index=priority_display_names.index(current_priority_label),
+                        key=f"prioGuardar cambios", key=f"save_{idx}", use_container_width=True):
                         opp['notes'] = new_notes
                         opp['status'] = new_status
                         opp['priority'] = new_priority
+                        if opp_manager.update_opportunity(opp, selected_audio):
+                            st.toast("✓ Cambios guardados")
+                            st.rerun()  # Actualizar cambios inmediatamente
+                        else:
+                            st.toast("⚠️ Error al guardar")
+                
+                with col_delete:
+                    if st.button("] = new_priority
                         if opp_manager.update_opportunity(opp, selected_audio):
                             st.toast("✓ Cambios guardados")
                             st.rerun()  # Actualizar cambios inmediatamente
