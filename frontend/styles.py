@@ -322,6 +322,42 @@ def get_styles():
         margin-top: 24px;
         margin-bottom: 10px;
     }
+
+    h4 {
+        margin-top: 16px;
+        margin-bottom: 12px;
+    }
+
+    /* Estilos para badges de palabras clave */
+    .keyword-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #0052CC 0%, #003d99 100%);
+        padding: 10px 14px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 500;
+        font-size: 14px;
+        box-shadow: 0 2px 8px rgba(0, 82, 204, 0.25);
+        transition: all 0.3s ease;
+    }
+
+    .keyword-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 82, 204, 0.35);
+    }
+
+    /* Botones mejorados */
+    .stButton > button {
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .stButton > button:hover {
+        transform: translateY(-1px);
+    }
     </style>
     """
 

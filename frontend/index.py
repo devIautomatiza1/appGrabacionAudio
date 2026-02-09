@@ -284,14 +284,14 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                     
     
     # SECCIÓN DE PALABRAS CLAVE
-    st.subheader("Palabras Clave")
+    st.markdown('<h3 style="color: white;">Palabras Clave</h3>', unsafe_allow_html=True)
     st.caption("Añade palabras clave para el análisis de oportunidades")
     
     col_kw1, col_kw2 = st.columns([2, 1])
     with col_kw1:
-        new_keyword = st.text_input("Palabra clave:", placeholder="Ej: presupuesto")
+        new_keyword = st.text_input("Palabra clave:", placeholder="Ej: presupuesto", label_visibility="collapsed")
     with col_kw2:
-        if st.button("➕ Añadir", use_container_width=True):
+        if st.button("Añadir", use_container_width=True, type="secondary"):
             if new_keyword:
                 # Limpiar espacios y convertir a minúsculas
                 cleaned_keyword = new_keyword.strip().lower()
@@ -311,20 +311,32 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
     
     # Mostrar palabras clave
     if st.session_state.keywords:
-        st.write("**📌 Palabras clave configuradas:**")
+        st.markdown('<h4 style="color: white; margin-top: 20px; margin-bottom: 16px;">Palabras clave configuradas</h4>', unsafe_allow_html=True)
+        
+        # Mostrar palabras clave como badges en una fila
+        keywords_html = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">'
         for keyword in st.session_state.keywords.keys():
-            col_display = st.columns([0.5, 2.5, 0.3])
-            with col_display[0]:
-                st.write("🏷️")
-            with col_display[1]:
-                st.write(f"**{keyword}**")
-            with col_display[2]:
-                if st.button("✖️", key=f"del_{keyword}"):
+            keywords_html += f'''
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0052CC 0%, #003d99 100%); padding: 8px 12px; border-radius: 6px; color: white; font-weight: 500; font-size: 14px;">
+                <span>{keyword}</span>
+            </div>
+            '''
+        keywords_html += '</div>'
+        st.markdown(keywords_html, unsafe_allow_html=True)
+        
+        # Botones para eliminar en una fila
+        cols = st.columns(len(st.session_state.keywords))
+        for idx, (keyword, col) in enumerate(zip(st.session_state.keywords.keys(), cols)):
+            with col:
+                if st.button("Eliminar", key=f"del_{keyword}", use_container_width=True):
                     del st.session_state.keywords[keyword]
                     st.rerun()
         
+        # Separador visual
+        st.markdown("")
+        
         # Botón para generar oportunidades
-        if st.button("🎯 Analizar y Generar Tickets de Oportunidades", use_container_width=True, type="primary"):
+        if st.button("Analizar y Generar Tickets de Oportunidades", use_container_width=True, type="primary"):
             with st.spinner("Analizando transcripción..."):
                 keywords_list = list(st.session_state.keywords.keys())
                 opportunities = opp_manager.extract_opportunities(
