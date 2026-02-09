@@ -460,6 +460,8 @@ if st.session_state.get("chat_enabled", False):
     
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+        # Mensaje de bienvenida inicial
+        st.session_state.chat_history.append("🤖 **IA**: Hola, soy tu asistente de análisis. Estoy aquí para ayudarte a entender tu reunión y extraer información relevante. Cuéntame qué te gustaría analizar.")
     
     # Mostrar historial de chat con estilo profesional
     if st.session_state.chat_history:
