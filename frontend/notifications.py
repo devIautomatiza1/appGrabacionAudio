@@ -1,10 +1,7 @@
 """
 Funciones centralizadas para mostrar notificaciones
-Sistema de cola con apilamiento vertical, auto-desaparición y botón X
 """
 import streamlit as st
-from datetime import datetime, timedelta
-import uuid
 
 
 # Configuración de estilos por tipo de notificación
@@ -22,141 +19,116 @@ NOTIFICATION_EXPANDED_STYLES = {
 }
 
 
-# Inicializar notificaciones en session_state si no existen
-if "notifications_queue" not in st.session_state:
-    st.session_state.notifications_queue = []
-
-if "notifications_css_js_injected" not in st.session_state:
-    st.session_state.notifications_css_js_injected = False
-
-
-def _inject_css_and_js() -> None:
-    """Inyecta CSS y JavaScript una sola vez"""
-    if not st.session_state.notifications_css_js_injected:
-        st.markdown("""
-        <script>
-            function closeNotification(notificationId) {
-                let element = document.getElementById('notif_' + notificationId);
-                if (element) {
-                    element.style.display = 'none';
-                }
-            }
-        </script>
-        <style>
-            @keyframes slideInRight {
-                from {
-                    opacity: 0;
-                    transform: translateX(400px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-            }
-        </style>
-        """, unsafe_allow_html=True)
-        st.session_state.notifications_css_js_injected = True
-
-
-def _add_notification_to_queue(message: str, notification_type: str, duration: int = 4) -> None:
+def _show_notification(message: str, notification_type: str) -> None:
     """
-    Añade una notificación a la cola.
+    Función interna para mostrar notificaciones compactas con tooltip.
+    
+    Args:
+        message: Texto a mostrar
+        notification_type: Tipo de notificación ('success', 'error', 'warning', 'info')
+    """
+    style = NOTIFICATION_STYLES.get(notification_type)
+    if not style:
+        return
+    
+    st.markdown(f"""
+    <div class="notification-icon {style['class']}">
+        {style['icon']}
+        <span class="notification-tooltip">{message}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def _show_notification_expanded(message: str, notification_type: str) -> None:
+    """
+    Función interna para mostrar notificaciones expandidas con colores personalizados.
     
     Args:
         message: Texto a mostrar
         notification_type: Tipo de notificación ('success', 'error', 'info', 'warning')
-        duration: Segundos que permanece visible (default: 4)
     """
-    _inject_css_and_js()
+    icon = NOTIFICATION_STYLES.get(notification_type, {}).get("icon", "•")
     
-    notification_id = str(uuid.uuid4())
-    notification = {
-        "id": notification_id,
-        "message": message,
-        "type": notification_type,
-        "created_at": datetime.now(),
-        "duration": duration
-    }
-    st.session_state.notifications_queue.append(notification)
-    
-    # Renderizar la notificación inmediatamente
+    # Colores personalizados para cada tipo
     colors = {
-        "success": {"bg": "#10b981", "text": "white"},
-        "error": {"bg": "#ef4444", "text": "white"},
-        "warning": {"bg": "#f59e0b", "text": "white"},
-        "info": {"bg": "#3b82f6", "text": "white"}
+        "success": {"bg": "#10b981", "text": "white"},  # Verde
+        "error": {"bg": "#ef4444", "text": "white"},    # Rojo
+        "warning": {"bg": "#f59e0b", "text": "white"},  # Amarillo
+        "info": {"bg": "#3b82f6", "text": "white"}      # Azul
     }
     
     color_style = colors.get(notification_type, colors["info"])
-    icon = NOTIFICATION_STYLES.get(notification_type, {}).get("icon", "•")
     
-    # Calcular posición basada en el número de notificaciones visibles
-    now = datetime.now()
-    visible_count = sum(1 for n in st.session_state.notifications_queue 
-                       if now - n["created_at"] < timedelta(seconds=n["duration"]))
-    top_position = 80 + ((visible_count - 1) * 70)
-    
-    html_code = f'<div id="notif_{notification_id}" style="position: fixed; top: {top_position}px; right: 20px; background-color: {color_style["bg"]}; color: {color_style["text"]}; padding: 14px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); z-index: {9999 - visible_count}; max-width: 350px; animation: slideInRight 0.4s ease-out; display: flex; align-items: center; justify-content: space-between; gap: 12px;"><span>{icon} {message}</span><button onclick="closeNotification(\'{notification_id}\')" style="background: none; border: none; color: {color_style["text"]}; font-size: 18px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.8\'">✕</button></div>'
-    
-    st.markdown(html_code, unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="
+        background-color: {color_style['bg']};
+        color: {color_style['text']};
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin: 8px 0;
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        animation: slideInRight 0.3s ease-out;
+        display: inline-block;
+    ">
+        {icon} {message}
+    </div>
+    <style>
+        @keyframes slideInRight {{
+            from {{
+                opacity: 0;
+                transform: translateX(20px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateX(0);
+            }}
+        }}
+    </style>
+    """, unsafe_allow_html=True)
 
 
-def _display_notifications() -> None:
-    """
-    Limpia las notificaciones expiradas de la cola.
-    No renderiza, porque se renderizaron cuando se añadieron.
-    """
-    # Limpiar notificaciones expiradas
-    now = datetime.now()
-    st.session_state.notifications_queue = [
-        n for n in st.session_state.notifications_queue
-        if now - n["created_at"] < timedelta(seconds=n["duration"])
-    ]
-
-
-
-
-
-# API pública - Notificaciones en cola (arriba a la derecha)
+# API pública - Notificaciones compactas
 def show_success(message: str) -> None:
-    """Añade un mensaje de éxito a la cola"""
-    _add_notification_to_queue(message, "success")
+    """Muestra un icono de éxito con tooltip con el mensaje"""
+    _show_notification(message, "success")
 
 
 def show_error(message: str) -> None:
-    """Añade un mensaje de error a la cola"""
-    _add_notification_to_queue(message, "error")
+    """Muestra un icono de error con tooltip con el mensaje"""
+    _show_notification(message, "error")
 
 
 def show_warning(message: str) -> None:
-    """Añade un mensaje de advertencia a la cola"""
-    _add_notification_to_queue(message, "warning")
+    """Muestra un icono de advertencia con tooltip con el mensaje"""
+    _show_notification(message, "warning")
 
 
 def show_info(message: str) -> None:
-    """Añade un mensaje de información a la cola"""
-    _add_notification_to_queue(message, "info")
+    """Muestra un icono de información con tooltip con el mensaje"""
+    _show_notification(message, "info")
 
 
-# Alias para compatibilidad con código existente
+# API pública - Notificaciones expandidas (para debug)
 def show_success_expanded(message: str) -> None:
-    """Alias de show_success para compatibilidad"""
-    show_success(message)
+    """Muestra un mensaje de éxito visible completo (para debug)"""
+    _show_notification_expanded(message, "success")
 
 
 def show_error_expanded(message: str) -> None:
-    """Alias de show_error para compatibilidad"""
-    show_error(message)
-
-
-def show_warning_expanded(message: str) -> None:
-    """Alias de show_warning para compatibilidad"""
-    show_warning(message)
+    """Muestra un mensaje de error visible completo (para debug)"""
+    _show_notification_expanded(message, "error")
 
 
 def show_info_expanded(message: str) -> None:
-    """Alias de show_info para compatibilidad"""
-    show_info(message)
+    """Muestra un mensaje de información visible completo (para debug)"""
+    _show_notification_expanded(message, "info")
+
+
+def show_warning_expanded(message: str) -> None:
+    """Muestra un mensaje de advertencia en toast arriba a la derecha"""
+    _show_notification_expanded(message, "warning")
 
 
 # Funciones de DEBUG - Para cuadros expandidos abajo
@@ -188,9 +160,3 @@ def show_info_debug(message: str) -> None:
         {icon} {message}
     </div>
     """, unsafe_allow_html=True)
-
-
-# Función para limpiar notificaciones expiradas (llamar al final de cada render)
-def render_notifications() -> None:
-    """Limpia notificaciones expiradas. Llamar al final de index.py"""
-    _display_notifications()
