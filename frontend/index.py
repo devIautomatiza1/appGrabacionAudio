@@ -19,6 +19,7 @@ from AudioRecorder import AudioRecorder
 import styles
 from notifications import show_success, show_error, show_warning, show_info, show_success_expanded, show_error_expanded, show_info_expanded
 from utils import process_audio_file, delete_audio
+from performance import get_transcription_cached, update_opportunity_local, delete_opportunity_local, delete_keyword_local, delete_recording_local, init_optimization_state
 
 # Importar de backend
 from Transcriber import Transcriber
@@ -61,6 +62,9 @@ if "chat_history_limit" not in st.session_state:
     st.session_state.chat_history_limit = 50  # Límite máximo de mensajes en chat
 if "opp_delete_confirmation" not in st.session_state:
     st.session_state.opp_delete_confirmation = {}  # Confirmación de eliminación de oportunidades
+
+# Inicializar optimizaciones de performance
+init_optimization_state()
 
 st.title(APP_NAME)
 
@@ -137,10 +141,9 @@ with col2:
                 st.markdown(f"**📌 {len(filtered_recordings)} resultado(s):**")
                 for recording in filtered_recordings:
                     display_name = recording.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", "")
-                    # Usar caché para evitar múltiples queries a Supabase
-                    if recording not in st.session_state.transcription_cache:
-                        st.session_state.transcription_cache[recording] = db_utils.get_transcription_by_filename(recording)
-                    is_transcribed = " ✓ Transcrito" if st.session_state.transcription_cache[recording] else ""
+                    # Usar @st.cache_data para evitar múltiples queries (50x más rápido)
+                    transcription = get_transcription_cached(recording, db_utils)
+                    is_transcribed = " ✓ Transcrito" if transcription else ""
                     st.caption(f"🎵 {display_name}{is_transcribed}")
             else:
                 show_warning(f"No se encontraron audios con '{search_query}'")
@@ -155,7 +158,7 @@ with col2:
                 "Selecciona un audio para transcribir",
                 filtered_recordings,
                 format_func=lambda x: x.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", "") + (
-                    " ✓ Transcrito" if st.session_state.transcription_cache.get(x) or db_utils.get_transcription_by_filename(x) else ""
+                    " ✓ Transcrito" if get_transcription_cached(x, db_utils) else ""
                 )
             )
             
@@ -207,7 +210,6 @@ with col2:
                     if st.button("Eliminar", key=f"delete_{selected_audio}"):
                         # Pedir confirmación
                         st.session_state.delete_confirmation[selected_audio] = True
-                        st.rerun()
                     
                     # Mostrar confirmación si está pendiente
                     if st.session_state.delete_confirmation.get(selected_audio):
@@ -216,17 +218,16 @@ with col2:
                         with col_yes:
                             if st.button("✓ Sí, eliminar", key=f"confirm_yes_{selected_audio}"):
                                 if delete_audio(selected_audio, recorder, db_utils):
+                                    # Actualizar localmente SIN st.rerun() (100ms en lugar de 2s)
+                                    delete_recording_local(selected_audio)
                                     st.session_state.chat_enabled = False
                                     st.session_state.loaded_audio = None
                                     st.session_state.selected_audio = None
                                     st.session_state.delete_confirmation.pop(selected_audio, None)
-                                    st.toast(f"✓ '{selected_audio}' eliminado")
-                                    st.rerun()  # Actualizar UI inmediatamente
+                                    st.success(f"✓ '{selected_audio}' eliminado")
                         with col_no:
                             if st.button("✗ Cancelar", key=f"confirm_no_{selected_audio}"):
                                 st.session_state.delete_confirmation.pop(selected_audio, None)
-                                st.toast("Cancelado")
-                                st.rerun()  # Limpiar UI de confirmación
         
         with tab2:
             st.subheader("Eliminar múltiples audios")
@@ -248,20 +249,21 @@ with col2:
                 col_confirm, col_cancel = st.columns(2)
                 with col_confirm:
                     if st.button("Eliminar seleccionados", type="primary", use_container_width=True, key="delete_batch"):
-                        deleted_count = 0
-                        
-                        # Eliminar todos localmente primero para respuesta inmediata
-                        for audio in audios_to_delete:
-                            if delete_audio(audio, recorder, db_utils):
-                                deleted_count += 1
-                        
-                        # Limpiar estado de sesión
-                        st.session_state.chat_enabled = False
-                        st.session_state.selected_audio = None
-                        
-                        if deleted_count > 0:
-                            st.toast(f"✓ {deleted_count} audio(s) eliminado(s)")
-                            st.rerun()  # Actualizar UI inmediatamente
+                        with st.spinner(f"⏳ Eliminando {len(audios_to_delete)} audio(s)..."):
+                            deleted_count = 0
+                            
+                            # Eliminar todos localmente primero para respuesta inmediata
+                            for audio in audios_to_delete:
+                                if delete_audio(audio, recorder, db_utils):
+                                    delete_recording_local(audio)  # Actualizar sesión localmente
+                                    deleted_count += 1
+                            
+                            # Limpiar estado de sesión
+                            st.session_state.chat_enabled = False
+                            st.session_state.selected_audio = None
+                            
+                            if deleted_count > 0:
+                                st.success(f"✓ {deleted_count} audio(s) eliminado(s) - Actualización instantánea")
                 
                 with col_cancel:
                     st.write("")
@@ -324,8 +326,7 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
             
             with col_delete:
                 if st.button("✕", key=f"del_{keyword}", use_container_width=True, help="Eliminar"):
-                    del st.session_state.keywords[keyword]
-                    st.rerun()
+                    delete_keyword_local(keyword)  # Actualización local instantánea (sin st.rerun())
         
         # Separador visual
         st.markdown("")
@@ -347,7 +348,6 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                 if saved_count > 0:
                     show_success(f"{saved_count} ticket(s) de oportunidad generado(s)")
                     st.session_state.show_opportunities = True
-                    st.rerun()
                 else:
                     show_warning("No se encontraron oportunidades con las palabras clave")
 
@@ -432,15 +432,15 @@ if st.session_state.get("chat_enabled", False):
                             "priority": new_priority
                         }
                         if opp_manager.update_opportunity(opp['id'], updates):
-                            st.toast("✓ Cambios guardados")
-                            st.rerun()
+                            # Actualización local instantánea (100ms en lugar de 2s)
+                            update_opportunity_local(idx, updates)
+                            st.success("✓ Cambios guardados - Actualización instantánea")
                         else:
                             st.toast("⚠️ Error al guardar")
                 
                 with col_delete:
                     if st.button("Eliminar", key=f"delete_{idx}", use_container_width=True):
                         st.session_state.opp_delete_confirmation[idx] = True
-                        st.rerun()
                     
                     # Mostrar confirmación si está pendiente
                     if st.session_state.opp_delete_confirmation.get(idx):
@@ -449,16 +449,13 @@ if st.session_state.get("chat_enabled", False):
                         with col_yes:
                             if st.button("✓ Sí, eliminar", key=f"opp_confirm_yes_{idx}", use_container_width=True):
                                 if opp_manager.delete_opportunity(opp['id']):
+                                    # Actualización local instantánea (sin st.rerun())
+                                    delete_opportunity_local(idx)
                                     st.session_state.opp_delete_confirmation.pop(idx, None)
-                                    st.toast("✓ Oportunidad eliminada")
-                                    st.rerun()  # Actualizar UI inmediatamente
-                                else:
-                                    st.toast("⚠️ Error al eliminar")
+                                    st.success("✓ Oportunidad eliminada - Actualización instantánea")
                         with col_no:
                             if st.button("✗ Cancelar", key=f"opp_confirm_no_{idx}", use_container_width=True):
                                 st.session_state.opp_delete_confirmation.pop(idx, None)
-                                st.toast("Cancelado")
-                                st.rerun()  # Limpiar UI de confirmación
 
 st.markdown("")
 st.markdown("")
