@@ -426,10 +426,12 @@ if st.session_state.get("chat_enabled", False):
                 col_save, col_delete = st.columns(2)
                 with col_save:
                     if st.button("Guardar cambios", key=f"save_{idx}", use_container_width=True):
-                        opp['notes'] = new_notes
-                        opp['status'] = new_status
-                        opp['priority'] = new_priority
-                        if opp_manager.update_opportunity(opp, selected_audio):
+                        updates = {
+                            "notes": new_notes,
+                            "status": new_status,
+                            "priority": new_priority
+                        }
+                        if opp_manager.update_opportunity(opp['id'], updates):
                             st.toast("✓ Cambios guardados")
                             st.rerun()
                         else:
@@ -446,7 +448,7 @@ if st.session_state.get("chat_enabled", False):
                         col_yes, col_no = st.columns(2)
                         with col_yes:
                             if st.button("✓ Sí, eliminar", key=f"opp_confirm_yes_{idx}", use_container_width=True):
-                                if opp_manager.delete_opportunity(opp['id'], selected_audio):
+                                if opp_manager.delete_opportunity(opp['id']):
                                     st.session_state.opp_delete_confirmation.pop(idx, None)
                                     st.toast("✓ Oportunidad eliminada")
                                     st.rerun()  # Actualizar UI inmediatamente
