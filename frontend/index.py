@@ -316,11 +316,7 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
         # Mostrar palabras clave como badges en una fila
         keywords_html = '<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">'
         for keyword in st.session_state.keywords.keys():
-            keywords_html += f'''
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0052CC 0%, #003d99 100%); padding: 8px 12px; border-radius: 6px; color: white; font-weight: 500; font-size: 14px;">
-                <span>{keyword}</span>
-            </div>
-            '''
+            keywords_html += f'<div style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0052CC 0%, #003d99 100%); padding: 8px 12px; border-radius: 6px; color: white; font-weight: 500; font-size: 14px;"><span>{keyword}</span></div>'
         keywords_html += '</div>'
         st.markdown(keywords_html, unsafe_allow_html=True)
         
