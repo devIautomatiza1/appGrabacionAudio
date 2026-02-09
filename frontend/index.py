@@ -375,9 +375,14 @@ if st.session_state.get("chat_enabled", False):
                 
                 with col_opp1:
                     st.write("**Contexto encontrado en el audio:**")
+                    # Resaltar la palabra clave en azul dentro del contexto
+                    highlighted_context = opp['full_context'].replace(
+                        opp['keyword'],
+                        f'<span style="color: #0052CC; font-weight: 600;">{opp["keyword"]}</span>'
+                    )
                     st.markdown(f"""
                     <div class="notification-container notification-info">
-                        {opp['full_context']}
+                        {highlighted_context}
                     </div>
                     """, unsafe_allow_html=True)
                     
