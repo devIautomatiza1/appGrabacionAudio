@@ -96,10 +96,12 @@ def delete_audio(filename: str, recorder: Any, db_utils: Any) -> bool:
         
         # Limpiar cache de procesados
         st.session_state.processed_audios.clear()
-        st.session_state.recordings = recorder.get_recordings_from_supabase()
+        
+        # Actualizar localmente la lista sin hacer refetch a Supabase (más rápido)
+        if filename in st.session_state.recordings:
+            st.session_state.recordings.remove(filename)
         
         logger.info(f"Audio eliminado: {filename}")
-        show_success(f"Audio '{filename}' eliminado correctamente")
         
         return True
         

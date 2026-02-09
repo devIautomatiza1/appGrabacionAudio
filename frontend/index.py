@@ -216,15 +216,15 @@ with col2:
                         with col_yes:
                             if st.button("✓ Sí, eliminar", key=f"confirm_yes_{selected_audio}"):
                                 if delete_audio(selected_audio, recorder, db_utils):
-                                    st.session_state.recordings = recorder.get_recordings_from_supabase()
                                     st.session_state.chat_enabled = False
                                     st.session_state.loaded_audio = None
+                                    st.session_state.selected_audio = None
                                     st.session_state.delete_confirmation.pop(selected_audio, None)
-                                    st.rerun()
+                                    st.toast(f"✓ '{selected_audio}' eliminado", icon="✓")
                         with col_no:
                             if st.button("✗ Cancelar", key=f"confirm_no_{selected_audio}"):
                                 st.session_state.delete_confirmation.pop(selected_audio, None)
-                                st.rerun()
+                                st.toast("Eliminación cancelada", icon="ℹ️")
         
         with tab2:
             st.subheader("Eliminar múltiples audios")
@@ -248,16 +248,17 @@ with col2:
                     if st.button("Eliminar seleccionados", type="primary", use_container_width=True, key="delete_batch"):
                         deleted_count = 0
                         
+                        # Eliminar todos localmente primero para respuesta inmediata
                         for audio in audios_to_delete:
                             if delete_audio(audio, recorder, db_utils):
                                 deleted_count += 1
                         
-                        st.session_state.recordings = recorder.get_recordings_from_supabase()
+                        # Limpiar estado de sesión
                         st.session_state.chat_enabled = False
+                        st.session_state.selected_audio = None
                         
                         if deleted_count > 0:
-                            show_success(f"{deleted_count} audio(s) eliminado(s) exitosamente")
-                            st.rerun()
+                            st.toast(f"✓ {deleted_count} audio(s) eliminado(s)", icon="✓")
                 
                 with col_cancel:
                     st.write("")
@@ -397,10 +398,9 @@ if st.session_state.get("chat_enabled", False):
                         opp['status'] = new_status
                         opp['priority'] = new_priority
                         if opp_manager.update_opportunity(opp, selected_audio):
-                            show_success("Cambios guardados en Supabase")
-                            st.rerun()
+                            st.toast("✓ Cambios guardados", icon="✓")
                         else:
-                            show_error("Error al guardar los cambios")
+                            st.toast("✗ Error al guardar", icon="✗")
                 
                 with col_delete:
                     if st.button("🗑️ Eliminar", key=f"delete_{idx}", use_container_width=True):
@@ -414,15 +414,14 @@ if st.session_state.get("chat_enabled", False):
                         with col_yes:
                             if st.button("✓ Sí, eliminar", key=f"opp_confirm_yes_{idx}", use_container_width=True):
                                 if opp_manager.delete_opportunity(opp['id'], selected_audio):
-                                    show_success("Oportunidad eliminada de Supabase")
                                     st.session_state.opp_delete_confirmation.pop(idx, None)
-                                    st.rerun()
+                                    st.toast("✓ Oportunidad eliminada", icon="✓")
                                 else:
-                                    show_error("Error al eliminar la oportunidad")
+                                    st.toast("✗ Error al eliminar", icon="✗")
                         with col_no:
                             if st.button("✗ Cancelar", key=f"opp_confirm_no_{idx}", use_container_width=True):
                                 st.session_state.opp_delete_confirmation.pop(idx, None)
-                                st.rerun()
+                                st.toast("Cancelado", icon="ℹ️")
 
 # SECCIÓN DE CHAT
 
