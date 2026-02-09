@@ -1,31 +1,54 @@
 """
-Estilos CSS modernos para la aplicación
+Estilos CSS modernos estilo Salesforce/Holded
+Diseño limpio, minimalista y profesional
 """
 
 def get_styles():
     """Retorna todos los estilos CSS de la aplicación"""
     return """
     <style>
+    /* Paleta de colores Salesforce/Holded */
+    :root {
+        --primary: #0052CC;
+        --primary-light: #0078D4;
+        --success: #09A741;
+        --danger: #EA001B;
+        --warning: #FFA500;
+        --info: #0052CC;
+        --bg-light: #F3F3F3;
+        --bg-white: #FFFFFF;
+        --text-dark: #171717;
+        --text-secondary: #8E92A9;
+        --border-color: #DCDCDC;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
     /* Contenedor principal centrado */
     .main {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 0 40px;
+        padding: 20px 40px;
+        background: #FFFFFF;
     }
     
     .stMainBlockContainer {
         max-width: 1200px;
         margin: 0 auto;
+        padding: 20px;
     }
     
     [data-testid="stAppViewContainer"] {
         padding: 0;
+        background: #F3F3F3;
     }
     
     [data-testid="stAppViewContainer"] > section {
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 40px;
+        background: #FFFFFF;
     }
     
     /* Centrar input de chat */
@@ -38,22 +61,20 @@ def get_styles():
         margin: 0 auto;
     }
     
-    @keyframes pulse-glow {
-        0% { 
-            box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    /* Animaciones sutiles */
+    @keyframes fade-in {
+        from {
+            opacity: 0;
         }
-        70% { 
-            box-shadow: 0 0 0 20px rgba(76, 175, 80, 0);
-        }
-        100% { 
-            box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+        to {
+            opacity: 1;
         }
     }
 
-    @keyframes slide-in {
+    @keyframes slide-in-up {
         from {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(4px);
         }
         to {
             opacity: 1;
@@ -61,67 +82,34 @@ def get_styles():
         }
     }
 
-    @keyframes expand {
-        from {
-            max-width: 40px;
-            padding: 8px;
-        }
-        to {
-            max-width: 500px;
-            padding: 14px 16px;
-        }
-    }
-
-    @keyframes avatar-pulse {
-        0%, 100% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.1);
-        }
-    }
-
-    @keyframes avatar-spin {
-        0% {
-            transform: rotateY(0deg);
-        }
-        100% {
-            transform: rotateY(360deg);
-        }
-    }
-
-    .success-pulse {
-        animation: pulse-glow 1.5s infinite;
-        padding: 12px 16px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
-        border-left: 4px solid #4CAF50;
-        font-weight: 500;
-    }
-
+    /* Badges modernos */
     .badge {
         display: inline-block;
         padding: 6px 12px;
-        border-radius: 6px;
+        border-radius: 4px;
         color: white;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         margin-right: 8px;
+        animation: fade-in 0.3s ease-out;
     }
 
     .badge-recording {
-        background: linear-gradient(135deg, #FF6B6B, #FF5252);
+        background: #EA001B;
+        color: white;
     }
 
     .badge-upload {
-        background: linear-gradient(135deg, #4ECDC4, #44A08D);
+        background: #0078D4;
+        color: white;
     }
 
     .badge-saved {
-        background: linear-gradient(135deg, #95E77D, #4CAF50);
+        background: #09A741;
+        color: white;
     }
 
-    /* Estilos para notificaciones compactas con emoticono */
+    /* Notificaciones mejoradas */
     .notification-icon {
         display: inline-flex;
         align-items: center;
@@ -131,40 +119,40 @@ def get_styles():
         border-radius: 50%;
         font-size: 20px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         margin: 5px 0;
         position: relative;
     }
 
     .notification-icon:hover {
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
 
     .notification-icon-success {
-        background: linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%);
-        border: 2px solid #34d399;
-        color: #10b981;
+        background: #E8F5E9;
+        border: 1px solid #09A741;
+        color: #09A741;
     }
 
     .notification-icon-error {
-        background: linear-gradient(135deg, rgba(248, 113, 113, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
-        border: 2px solid #f87171;
-        color: #dc2626;
+        background: #FFEBEE;
+        border: 1px solid #EA001B;
+        color: #EA001B;
     }
 
     .notification-icon-warning {
-        background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
-        border: 2px solid #fbbf24;
-        color: #d97706;
+        background: #FFF3E0;
+        border: 1px solid #FFA500;
+        color: #FFA500;
     }
 
     .notification-icon-info {
-        background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
-        border: 2px solid #60a5fa;
-        color: #2563eb;
+        background: #E3F2FD;
+        border: 1px solid #0052CC;
+        color: #0052CC;
     }
 
-    /* Tooltip para el mensaje */
+    /* Tooltip moderno */
     .notification-tooltip {
         visibility: hidden;
         position: absolute;
@@ -172,20 +160,18 @@ def get_styles():
         bottom: 125%;
         left: 50%;
         transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.9);
+        background-color: #171717;
         color: white;
         text-align: center;
-        border-radius: 8px;
+        border-radius: 4px;
         padding: 8px 12px;
         white-space: nowrap;
         font-size: 12px;
         font-weight: 500;
         opacity: 0;
-        transition: opacity 0.3s;
+        transition: opacity 0.2s;
         pointer-events: none;
-        max-width: 200px;
-        word-wrap: break-word;
-        white-space: normal;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
     .notification-icon:hover .notification-tooltip {
@@ -193,7 +179,6 @@ def get_styles():
         opacity: 1;
     }
 
-    /* Arrow para tooltip */
     .notification-tooltip::after {
         content: "";
         position: absolute;
@@ -202,38 +187,39 @@ def get_styles():
         margin-left: -5px;
         border-width: 5px;
         border-style: solid;
-        border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+        border-color: #171717 transparent transparent transparent;
     }
 
-    /* Estilos para notificaciones expandidas (para debug) */
+    /* Notificaciones expandidas */
     .notification-expanded {
-        animation: slide-in 0.3s ease-out;
+        animation: slide-in-up 0.3s ease-out;
         margin: 10px 0;
-        border-radius: 8px;
-        padding: 14px 16px;
+        border-radius: 4px;
+        padding: 12px 16px;
         font-weight: 500;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-sm);
+        border-left: 3px solid;
     }
 
     .notification-expanded-success {
-        background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
-        border-left: 5px solid #34d399;
-        color: #10b981;
+        background: #E8F5E9;
+        border-left-color: #09A741;
+        color: #09A741;
     }
 
     .notification-expanded-error {
-        background: linear-gradient(135deg, rgba(248, 113, 113, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%);
-        border-left: 5px solid #f87171;
-        color: #dc2626;
+        background: #FFEBEE;
+        border-left-color: #EA001B;
+        color: #EA001B;
     }
 
     .notification-expanded-info {
-        background: linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%);
-        border-left: 5px solid #60a5fa;
-        color: #2563eb;
+        background: #E3F2FD;
+        border-left-color: #0052CC;
+        color: #0052CC;
     }
 
-    /* Estilos para el chat */
+    /* Chat moderno */
     .chat-container {
         display: flex;
         flex-direction: column;
@@ -245,7 +231,7 @@ def get_styles():
         display: flex;
         gap: 12px;
         margin-bottom: 16px;
-        animation: slide-in 0.3s ease-out;
+        animation: slide-in-up 0.3s ease-out;
     }
 
     .chat-message-user {
@@ -259,23 +245,23 @@ def get_styles():
     .chat-bubble {
         max-width: 70%;
         padding: 12px 16px;
-        border-radius: 12px;
+        border-radius: 8px;
         word-wrap: break-word;
         line-height: 1.5;
         font-size: 14px;
+        box-shadow: var(--shadow-sm);
     }
 
     .chat-bubble-user {
-        background: linear-gradient(135deg, #3B82F6 0%, #2563eb 100%);
+        background: #0052CC;
         color: white;
-        border-radius: 18px 18px 4px 18px;
+        border-radius: 12px 12px 2px 12px;
     }
 
     .chat-bubble-ai {
-        background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(75, 85, 99, 0.05) 100%);
-        color: #e5e7eb;
-        border: 1px solid rgba(107, 114, 128, 0.2);
-        border-radius: 18px 18px 18px 4px;
+        background: #E8EAED;
+        color: #171717;
+        border-radius: 12px 12px 12px 2px;
     }
 
     .chat-avatar {
@@ -288,23 +274,18 @@ def get_styles():
         font-size: 18px;
         flex-shrink: 0;
         margin-top: 4px;
+        box-shadow: var(--shadow-sm);
     }
 
     .chat-avatar-user {
-        background: linear-gradient(135deg, #3B82F6 0%, #2563eb 100%);
+        background: #0052CC;
+        color: white;
     }
 
     .chat-avatar-ai {
-        background: linear-gradient(135deg, rgba(107, 114, 128, 0.2) 0%, rgba(75, 85, 99, 0.15) 100%);
-        border: 1px solid rgba(107, 114, 128, 0.3);
-    }
-
-    .avatar-pulse {
-        animation: avatar-pulse 2s ease-in-out infinite;
-    }
-
-    .avatar-spin {
-        animation: avatar-spin 3s linear infinite;
+        background: #FFFFFF;
+        color: #8E92A9;
+        border: 1px solid #DCDCDC;
     }
     </style>
     """
