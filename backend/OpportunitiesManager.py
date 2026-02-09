@@ -3,7 +3,14 @@ import os
 from datetime import datetime
 from pathlib import Path
 import streamlit as st
+import sys
+
+# Agregar ruta padre al path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from logger import get_logger
 from database import init_supabase
+
+logger = get_logger(__name__)
 
 # Obtener ruta a datos desde la carpeta parent/data
 BASE_DIR = Path(__file__).parent.parent / "data"
@@ -16,8 +23,8 @@ class OpportunitiesManager:
         try:
             # Inicializar cliente Supabase
             self.db = init_supabase()
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to initialize Supabase client: {str(e)}. Using local fallback.")
     
     def get_recording_id(self, filename):
         """Obtiene el ID del recording por nombre de archivo"""
@@ -28,8 +35,8 @@ class OpportunitiesManager:
             response = self.db.table("recordings").select("id").eq("filename", filename).execute()
             if response and response.data and len(response.data) > 0:
                 return response.data[0]["id"]
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Error retrieving recording ID for {filename}: {str(e)}")
         return None
     
     def extract_opportunities(self, transcription, keywords_list):
@@ -191,8 +198,8 @@ class OpportunitiesManager:
                     with open(filepath, "r", encoding="utf-8") as f:
                         opp = json.load(f)
                         opportunities.append(opp)
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Error loading local opportunities for {audio_filename}: {str(e)}")
         
         return opportunities
     
@@ -243,8 +250,8 @@ class OpportunitiesManager:
                 response = self.db.table("opportunities").delete().eq("id", opportunity_id).execute()
                 if response:
                     return True
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Error deleting opportunity {opportunity_id} from Supabase: {str(e)}")
         
         # Fallback: eliminar archivo local
         return self._delete_opportunity_local(opportunity_id, audio_filename)
@@ -260,7 +267,7 @@ class OpportunitiesManager:
                     filepath = OPPORTUNITIES_DIR / file
                     filepath.unlink()
                     return True
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Error deleting local opportunity {opportunity_id}: {str(e)}")
         
         return False

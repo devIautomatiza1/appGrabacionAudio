@@ -45,8 +45,8 @@ if "processed_audios" not in st.session_state:
     st.session_state.processed_audios = set()  # Audios ya procesados
 if "recordings" not in st.session_state:
     st.session_state.recordings = recorder.get_recordings_from_supabase()
-if "is_deleting" not in st.session_state:
-    st.session_state.is_deleting = False
+if "records" not in st.session_state:
+    st.session_state.recordings = recorder.get_recordings_from_supabase()
 if "selected_audio" not in st.session_state:
     st.session_state.selected_audio = None
 if "upload_key_counter" not in st.session_state:
@@ -57,6 +57,8 @@ if "keywords" not in st.session_state:
     st.session_state.keywords = {}  # Palabras clave
 if "delete_confirmation" not in st.session_state:
     st.session_state.delete_confirmation = {}  # Confirmacion de eliminacion
+if "transcription_cache" not in st.session_state:
+    st.session_state.transcription_cache = {}  # Caché de transcripciones
 
 st.title(APP_NAME)
 
@@ -118,6 +120,11 @@ with col2:
             placeholder="Nombre del archivo...",
             key="audio_search"
         )
+        
+        # Limpiar búsqueda si cambia el audio seleccionado
+        if st.session_state.get("last_selected") != st.session_state.get("selected_audio"):
+            st.session_state.last_selected = st.session_state.get("selected_audio")
+            search_query = ""  # Reset búsqueda
         
         # Filtrar audios según búsqueda
         if search_query.strip():
