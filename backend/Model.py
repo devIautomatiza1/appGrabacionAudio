@@ -1,66 +1,41 @@
+"""Model.py - Chat con Google Gemini (~50 líneas)"""
 import google.generativeai as genai
 from pathlib import Path
-from typing import Dict, Optional, Union
 import sys
 
-# Agregar ruta padre al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import GEMINI_API_KEY, CHAT_MODEL
 from logger import get_logger
 
 logger = get_logger(__name__)
-
-# Configurar Gemini
 genai.configure(api_key=GEMINI_API_KEY)
 
-
 class Model:
-    """Modelo de chat inteligente usando Google Gemini"""
-    
-    def __init__(self) -> None:
-        """Inicializa el modelo de chat"""
+    def __init__(self):
         self.model = genai.GenerativeModel(CHAT_MODEL)
-        logger.info("Modelo de chat inicializado")
+        logger.info("✓ Chat model initialized")
     
-    def call_model(self, question: str, context: str, keywords: Optional[Union[Dict, list]] = None) -> str:
-        """
-        Genera una respuesta basada en una pregunta y contexto.
-        
-        Args:
-            question (str): Pregunta del usuario
-            context (str): Contexto (transcripción del audio)
-            keywords (dict, optional): Palabras clave (dict o list)
-            
-        Returns:
-            str: Respuesta generada por el modelo
-        """
+    def call_model(self, question: str, context: str, keywords=None) -> str:
+        """Genera respuesta basada en pregunta y contexto"""
         try:
-            # Construir sección de palabras clave
             keywords_section = ""
             if keywords:
-                if isinstance(keywords, dict):
-                    keywords_list = list(keywords.keys())
-                else:
-                    keywords_list = keywords
-                
-                if len(keywords_list) > 0:
-                    keywords_section = f"\n\n📌 PALABRAS CLAVE IMPORTANTES:\n" + ", ".join(keywords_list)
-                    keywords_section += "\nTen en cuenta estas palabras clave al responder y organizalas en tu respuesta si es relevante."
+                kw_list = list(keywords.keys()) if isinstance(keywords, dict) else keywords
+                if kw_list:
+                    keywords_section = f"\n\n📌 KEYWORDS:\n{', '.join(kw_list)}\nUsa estas keywords en tu respuesta si es relevante."
             
-            prompt = f"""Eres un asistente inteligente que ayuda a responder preguntas basado en el siguiente contexto:
+            prompt = f"""Eres un asistente que responde basado en el contexto:
 
 {context}{keywords_section}
 
-Si no sabes la respuesta basándote en el contexto, responde 'No lo sé'. Sé preciso y conciso en tus respuestas.
-Si es posible, destaca las palabras clave en tu respuesta.
+Si no lo sabes, responde 'No lo sé'. Sé preciso y conciso.
 
 Pregunta: {question}"""
             
-            logger.info(f"Generando respuesta para pregunta: {question[:50]}...")
+            logger.info(f"Generando respuesta para: {question[:50]}...")
             response = self.model.generate_content(prompt)
-            logger.info(f"Respuesta generada: {len(response.text)} caracteres")
             return response.text
-            
+        
         except Exception as e:
-            logger.error(f"Error al generar respuesta: {e}")
+            logger.error(f"call_model: {type(e).__name__} - {str(e)}")
             raise

@@ -1,72 +1,49 @@
+"""Transcriber.py - Transcribidor de audio con Gemini (~45 líneas)"""
 import google.generativeai as genai
 import os
 from pathlib import Path
-from typing import NamedTuple
 import sys
 
-# Agregar ruta padre al path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import GEMINI_API_KEY, TRANSCRIPTION_MODEL, MIME_TYPES
 from logger import get_logger
 
 logger = get_logger(__name__)
-
-# Configurar Gemini
 genai.configure(api_key=GEMINI_API_KEY)
 
 class Transcriber:
-    """Transcribidor de audio usando Google Gemini"""
-    
-    def __init__(self) -> None:
-        """Inicializa el transcribidor"""
+    def __init__(self):
         self.model = genai.GenerativeModel(TRANSCRIPTION_MODEL)
-        logger.info("Transcriber inicializado")
+        logger.info("✓ Transcriber initialized")
     
-    def transcript_audio(self, audio_path: str) -> 'TranscriptionResult':
-        """
-        Transcribe un archivo de audio.
-        
-        Args:
-            audio_path (str): Ruta al archivo de audio
-            
-        Returns:
-            TranscriptionResult: Objeto con atributo 'text' conteniendo la transcripción
-            
-        Raises:
-            FileNotFoundError: Si el archivo no existe
-            ValueError: Si el formato no es soportado
-        """
+    def transcript_audio(self, audio_path: str):
+        """Transcribe un archivo de audio"""
         try:
-            # Validar que el archivo existe
             if not os.path.exists(audio_path):
                 raise FileNotFoundError(f"Archivo no encontrado: {audio_path}")
             
-            # Obtener extension y MIME type
-            extension = audio_path.lower().split('.')[-1]
-            mime_type = MIME_TYPES.get(extension, 'audio/mpeg')
+            ext = audio_path.lower().split('.')[-1]
+            mime_type = MIME_TYPES.get(ext, 'audio/mpeg')
             
-            logger.info(f"Transcribiendo archivo: {audio_path} (tipo: {mime_type})")
+            logger.info(f"Transcribiendo: {audio_path} ({mime_type})")
+            audio_file = genai.upload_file(audio_path, mime_type=mime_type)
             
-            # Subir el archivo a Gemini
-            audio_file_obj = genai.upload_file(audio_path, mime_type=mime_type)
+            prompt = "Transcribe el audio en texto. Solo devuelve el texto sin explicaciones."
+            response = self.model.generate_content([prompt, audio_file])
             
-            # Transcribir usando Gemini
-            prompt = "Transcribe el siguiente audio en texto. Devuelve solo el texto transcrito sin explicaciones adicionales."
-            response = self.model.generate_content([prompt, audio_file_obj])
+            logger.info(f"✓ Transcripción: {len(response.text)} caracteres")
             
-            # Crear objeto con resultado
-            class TranscriptionResult:
+            class Result:
                 def __init__(self, text):
                     self.text = text
             
-            result = TranscriptionResult(response.text)
-            logger.info(f"Transcripción completada: {len(response.text)} caracteres")
-            return result
-            
+            return Result(response.text)
+        
         except FileNotFoundError as e:
-            logger.error(f"Error: Archivo no encontrado - {audio_path}")
+            logger.error(f"Archivo no encontrado: {audio_path}")
             raise
+        
         except Exception as e:
-            logger.error(f"Error al transcribir: {str(e)}")
+            logger.error(f"transcript_audio: {type(e).__name__} - {str(e)}")
             raise
 
