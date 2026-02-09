@@ -163,6 +163,7 @@ class AudioRecorder:
     def get_recording_path(self, filename: str) -> str:
         """
         Obtiene la ruta completa de un archivo de audio.
+        Si el archivo local no existe, intenta descargarlo de Supabase Storage.
         
         Args:
             filename (str): Nombre del archivo
@@ -170,5 +171,25 @@ class AudioRecorder:
         Returns:
             str: Ruta completa al archivo
         """
-        return str(RECORDINGS_DIR / filename)
+        filepath = RECORDINGS_DIR / filename
+        
+        # Si el archivo ya existe localmente, retornar la ruta
+        if filepath.exists():
+            return str(filepath)
+        
+        # Si no existe, intentar descargar de Supabase Storage
+        try:
+            sys.path.insert(0, str(Path(__file__).parent.parent))
+            from backend.database import download_audio_from_storage
+            
+            logger.info(f"Archivo local no encontrado: {filename}. Descargando de Storage...")
+            if download_audio_from_storage(filename, str(filepath)):
+                logger.info(f"Archivo descargado exitosamente: {filename}")
+                return str(filepath)
+            else:
+                logger.error(f"No se pudo descargar {filename} de Storage")
+                return str(filepath)  # Retornar la ruta de todos modos (para otros manejos de error)
+        except Exception as e:
+            logger.warning(f"Error intentando descargar de Storage: {e}")
+            return str(filepath)
 

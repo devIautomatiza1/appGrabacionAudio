@@ -48,9 +48,106 @@ def init_supabase() -> Client:
         logger.error(f"Error al conectar a Supabase: {e}")
         return None
 
+def upload_audio_to_storage(filename: str, filepath: str) -> bool:
+    """
+    Sube un archivo de audio a Supabase Storage.
+    
+    Args:
+        filename (str): Nombre del archivo
+        filepath (str): Ruta local del archivo
+        
+    Returns:
+        bool: True si se subió exitosamente
+    """
+    try:
+        db = init_supabase()
+        if db is None:
+            logger.warning("No se pudo subir a Storage (sin conexión a Supabase)")
+            return False
+        
+        # Leer el archivo
+        with open(filepath, "rb") as f:
+            file_data = f.read()
+        
+        # Subir a Storage bucket 'recordings'
+        response = db.storage.from_("recordings").upload(
+            path=filename,
+            file=file_data,
+            file_options={"upsert": True}
+        )
+        
+        logger.info(f"Audio subido a Storage: {filename}")
+        return True
+        
+    except FileNotFoundError:
+        logger.error(f"Archivo no encontrado: {filepath}")
+        return False
+    except Exception as e:
+        logger.warning(f"Error subiendo a Storage: {str(e)}. Continuando sin Storage.")
+        return False
+
+
+def download_audio_from_storage(filename: str, save_to: str) -> bool:
+    """
+    Descarga un archivo de audio desde Supabase Storage.
+    
+    Args:
+        filename (str): Nombre del archivo en Storage
+        save_to (str): Ruta donde guardar el archivo
+        
+    Returns:
+        bool: True si se descargó exitosamente
+    """
+    try:
+        db = init_supabase()
+        if db is None:
+            logger.warning("No se pudo descargar de Storage (sin conexión)")
+            return False
+        
+        # Descargar de Storage
+        response = db.storage.from_("recordings").download(filename)
+        
+        # Guardar localmente
+        with open(save_to, "wb") as f:
+            f.write(response)
+        
+        logger.info(f"Audio descargado de Storage: {filename}")
+        return True
+        
+    except Exception as e:
+        logger.warning(f"Error descargando de Storage: {str(e)}")
+        return False
+
+
+def delete_audio_from_storage(filename: str) -> bool:
+    """
+    Elimina un archivo de audio de Supabase Storage.
+    
+    Args:
+        filename (str): Nombre del archivo en Storage
+        
+    Returns:
+        bool: True si se eliminó exitosamente
+    """
+    try:
+        db = init_supabase()
+        if db is None:
+            logger.warning("No se pudo eliminar de Storage (sin conexión)")
+            return False
+        
+        # Eliminar de Storage
+        db.storage.from_("recordings").remove([filename])
+        logger.info(f"Audio eliminado de Storage: {filename}")
+        return True
+        
+    except Exception as e:
+        logger.warning(f"Error eliminando de Storage: {str(e)}")
+        return False
+
+
 def save_recording_to_db(filename: str, filepath: str, transcription: Optional[str] = None) -> Optional[str]:
     """
-    Guarda grabación en la base de datos.
+    Guarda grabación en la base de datos y en Storage.
     
     Args:
         filename (str): Nombre del archivo
@@ -78,7 +175,12 @@ def save_recording_to_db(filename: str, filepath: str, transcription: Optional[s
         
         if response.data:
             logger.info(f"Guardado en Supabase: {filename}")
-            return response.data[0]["id"]
+            recording_id = response.data[0]["id"]
+            
+            # Subir el archivo de audio a Storage en paralelo
+            upload_audio_to_storage(filename, filepath)
+            
+            return recording_id
         else:
             logger.warning(f"No se guardó correctamente")
             return None
@@ -190,7 +292,7 @@ def delete_opportunities_by_recording(recording_id: int) -> bool:
         return False
 
 def delete_recording_by_filename(filename: str) -> bool:
-    """Busca y elimina una grabación por nombre de archivo"""
+    """Busca y elimina una grabación por nombre de archivo (BD + Storage)"""
     try:
         db = init_supabase()
         if db is None:
@@ -203,9 +305,15 @@ def delete_recording_by_filename(filename: str) -> bool:
             
             if response.data and len(response.data) > 0:
                 recording_id = response.data[0]["id"]
+                
+                # Eliminar de la BD
                 result = delete_recording_from_db(recording_id)
+                
+                # Eliminar de Storage en paralelo
+                delete_audio_from_storage(filename)
+                
                 if result:
-                    logger.info(f"Grabación eliminada de Supabase")
+                    logger.info(f"Grabación eliminada de Supabase y Storage")
                 return result
             else:
                 # No existe en BD (ya fue eliminado o nunca se guardó)
