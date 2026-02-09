@@ -51,8 +51,13 @@ def process_audio_file(audio_bytes: bytes, filename: str, recorder: Any, db_util
         # Guardar localmente
         filepath = recorder.save_recording(audio_bytes, filename)
         
-        # Guardar en Supabase
+        # Guardar en Supabase (y almacenar en Storage antes)
         recording_id = db_utils.save_recording_to_db(filename, filepath)
+        
+        if not recording_id:
+            show_error("Error: No se pudo guardar el audio en Supabase. Verifica tu conexión a Internet y el bucket Storage.")
+            logger.error(f"Fallo al guardar en BD: {filename}")
+            return False, None
         
         # Marcar como procesado
         st.session_state.processed_audios.add(audio_hash)
@@ -61,13 +66,17 @@ def process_audio_file(audio_bytes: bytes, filename: str, recorder: Any, db_util
         st.session_state.recordings = recorder.get_recordings_from_supabase()
         
         logger.info(f"Audio procesado exitosamente: {filename} (ID: {recording_id})")
-        show_success(f"Audio '{filename}' guardado correctamente")
+        show_success(f"Audio '{filename}' guardado correctamente en Supabase Storage")
         
         return True, recording_id
         
     except ValueError as e:
         show_error(f"Validación falló: {str(e)}")
         logger.warning(f"Validación falló para {filename}: {e}")
+        return False, None
+    except FileNotFoundError as e:
+        show_error(f"Archivo no encontrado: {str(e)}")
+        logger.error(f"Archivo no encontrado al guardar {filename}: {e}")
         return False, None
     except Exception as e:
         show_error(f"Error al procesar audio: {str(e)}")
