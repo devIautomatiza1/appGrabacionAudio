@@ -70,79 +70,16 @@ def _display_notifications() -> None:
         "info": {"bg": "#3b82f6", "text": "white"}
     }
     
-    # Crear HTML para todas las notificaciones
-    notification_html = ""
+    # Renderizar cada notificación
     for idx, notification in enumerate(st.session_state.notifications_queue):
         color_style = colors.get(notification["type"], colors["info"])
         icon = NOTIFICATION_STYLES.get(notification["type"], {}).get("icon", "•")
         top_position = 80 + (idx * 70)
+        notif_id = notification["id"]
         
-        notification_html += f"""
-        <div id="notif_{notification['id']}" style="
-            position: fixed;
-            top: {top_position}px;
-            right: 20px;
-            background-color: {color_style['bg']};
-            color: {color_style['text']};
-            padding: 14px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-            z-index: {9999 - idx};
-            max-width: 350px;
-            animation: slideInRight 0.4s ease-out;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        ">
-            <span>{icon} {notification['message']}</span>
-            <button onclick="closeNotification('{notification['id']}')" 
-                    style="
-                    background: none;
-                    border: none;
-                    color: {color_style['text']};
-                    font-size: 18px;
-                    cursor: pointer;
-                    padding: 0;
-                    width: 24px;
-                    height: 24px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    opacity: 0.8;
-                    transition: opacity 0.2s;
-                    " 
-                    onmouseover="this.style.opacity='1'"
-                    onmouseout="this.style.opacity='0.8'"
-            >✕</button>
-        </div>
-        """
-    
-    st.markdown(f"""
-    {notification_html}
-    <script>
-        function closeNotification(notificationId) {{
-            let element = document.getElementById('notif_' + notificationId);
-            if (element) {{
-                element.style.display = 'none';
-            }}
-        }}
-    </script>
-    <style>
-        @keyframes slideInRight {{
-            from {{
-                opacity: 0;
-                transform: translateX(400px);
-            }}
-            to {{
-                opacity: 1;
-                transform: translateX(0);
-            }}
-        }}
-    </style>
-    """, unsafe_allow_html=True)
+        html_code = f"""<div id="notif_{notif_id}" style="position: fixed; top: {top_position}px; right: 20px; background-color: {color_style['bg']}; color: {color_style['text']}; padding: 14px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); z-index: {9999 - idx}; max-width: 350px; animation: slideInRight 0.4s ease-out; display: flex; align-items: center; justify-content: space-between; gap: 12px;"><span>{icon} {notification['message']}</span><button onclick="closeNotification('{notif_id}')" style="background: none; border: none; color: {color_style['text']}; font-size: 18px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">✕</button></div>"""
+        
+        st.markdown(html_code, unsafe_allow_html=True)
 
 
 
@@ -223,8 +160,16 @@ def show_info_debug(message: str) -> None:
 # Función para renderizar todas las notificaciones (llamar al inicio de index.py)
 def render_notifications() -> None:
     """Renderiza todas las notificaciones activas en la cola"""
-    # Renderizar CSS para la animación una sola vez
+    # Renderizar CSS y JavaScript una sola vez
     st.markdown("""
+    <script>
+        function closeNotification(notificationId) {
+            let element = document.getElementById('notif_' + notificationId);
+            if (element) {
+                element.style.display = 'none';
+            }
+        }
+    </script>
     <style>
         @keyframes slideInRight {
             from {
