@@ -31,19 +31,8 @@ from datetime import datetime
 # Configuración inicial de la interfaz de usuario
 st.set_page_config(layout="wide", page_title=APP_NAME)
 
-# Inicializar tema en session_state
-if "theme" not in st.session_state:
-    st.session_state.theme = "dark"
-
-# Cargar estilos CSS con el tema actual
-st.markdown(styles.get_styles(theme=st.session_state.theme), unsafe_allow_html=True)
-
-# Botón para cambiar tema (esquina superior derecha)
-col_theme_spacer, col_theme_btn = st.columns([0.85, 0.15])
-with col_theme_btn:
-    if st.button("🌙 Oscuro" if st.session_state.theme == "light" else "☀️ Claro", use_container_width=True):
-        st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
-        st.rerun()
+# Cargar estilos CSS desde archivo
+st.markdown(styles.get_styles(), unsafe_allow_html=True)
 
 # Inicializar objetos
 recorder = AudioRecorder()
@@ -73,13 +62,15 @@ if "chat_history_limit" not in st.session_state:
 if "opp_delete_confirmation" not in st.session_state:
     st.session_state.opp_delete_confirmation = {}  # Confirmación de eliminación de oportunidades
 
+st.title(APP_NAME)
+
 # Crear dos columnas principales para la carga
 col1, col2 = st.columns([1, 1])
 
 with col1:
     # GRABADORA DE AUDIO EN VIVO (nativa de Streamlit)
-    st.markdown('<h3 style="color: white; font-weight: 600; margin-bottom: 4px;">Grabadora en vivo</h3>', unsafe_allow_html=True)
-    st.caption("Graba directamente desde tu micrófono")
+    st.markdown('<h3 style="color: white;">Grabadora en vivo</h3>', unsafe_allow_html=True)
+    st.caption("Graba directamente desde tu micrófono (sin interrupciones)")
     
     audio_data = st.audio_input("Presiona el botón para grabar:", key=f"audio_recorder_{st.session_state.record_key_counter}")
     
@@ -97,7 +88,7 @@ with col1:
                 st.session_state.record_key_counter += 1
     
     # Opción de subir archivo
-    st.markdown('<h3 style="color: white; font-weight: 600; margin-bottom: 4px; margin-top: 20px;">Sube un archivo</h3>', unsafe_allow_html=True)
+    st.markdown('<h3 style="color: white;">Sube un archivo de audio</h3>', unsafe_allow_html=True)
     uploaded_file = st.file_uploader(
         "Selecciona un archivo de audio",
         type=list(AUDIO_EXTENSIONS),
@@ -116,7 +107,7 @@ with col1:
                 st.session_state.upload_key_counter += 1
 
 with col2:
-    st.markdown('<h3 style="color: white; font-weight: 600; margin-bottom: 4px;">Audios Guardados</h3>', unsafe_allow_html=True)
+    st.markdown('<h3 style="color: white;">Audios Guardados</h3>', unsafe_allow_html=True)
     
     # Refresh de la lista de audios desde Supabase cada vez que se renderiza (para sincronizar)
     recordings = recorder.get_recordings_from_supabase()
