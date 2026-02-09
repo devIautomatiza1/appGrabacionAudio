@@ -57,37 +57,42 @@ def upload_audio_to_storage(filename: str, filepath: str) -> bool:
         filepath (str): Ruta local del archivo
         
     Returns:
-        bool: True si se subió exitosamente
-        
-    Raises:
-        FileNotFoundError: Si el archivo no existe
-        Exception: Si hay error al subir a Storage
+        bool: True si se subió exitosamente, False en caso contrario
     """
     try:
         # Verificar que el archivo existe antes de intentar subir
         file_path = Path(filepath)
         if not file_path.exists():
-            raise FileNotFoundError(f"Archivo no encontrado para subir a Storage: {filepath}")
+            logger.error(f"CRÍTICO: Archivo no encontrado para subir a Storage: {filepath}")
+            return False
         
         if not file_path.is_file():
-            raise ValueError(f"La ruta no es un archivo: {filepath}")
+            logger.error(f"CRÍTICO: La ruta no es un archivo: {filepath}")
+            return False
         
         # Verificar tamaño
         file_size = file_path.stat().st_size / (1024 * 1024)
         if file_size == 0:
-            raise ValueError(f"El archivo está vacío: {filename}")
+            logger.error(f"CRÍTICO: El archivo está vacío: {filename}")
+            return False
         
-        logger.info(f"Subiendo a Storage: {filename} ({file_size:.2f}MB)")
+        logger.info(f"Iniciando upload a Storage: {filename} ({file_size:.2f}MB)")
         
         db = init_supabase()
         if db is None:
-            raise Exception("No se pudo conectar a Supabase para Storage")
+            logger.error("CRÍTICO: No se pudo conectar a Supabase para Storage")
+            return False
         
         # Leer el archivo
         with open(filepath, "rb") as f:
             file_data = f.read()
         
+        if len(file_data) == 0:
+            logger.error(f"CRÍTICO: Datos leídos están vacíos: {filename}")
+            return False
+        
         # Subir a Storage bucket 'recordings'
+        logger.info(f"Subiendo {filename} ({len(file_data) / 1024:.2f}KB) a Storage...")
         response = db.storage.from_("recordings").upload(
             path=filename,
             file=file_data,
@@ -98,16 +103,17 @@ def upload_audio_to_storage(filename: str, filepath: str) -> bool:
         return True
         
     except FileNotFoundError as e:
-        error_msg = f"Archivo no encontrado: {filepath}"
-        logger.error(error_msg)
-        raise Exception(error_msg)
-    except ValueError as e:
-        logger.error(f"Error de validación: {str(e)}")
-        raise
+        logger.error(f"CRÍTICO - Archivo no encontrado: {filepath} - {str(e)}")
+        return False
+    except PermissionError as e:
+        logger.error(f"CRÍTICO - Permiso denegado: {filepath} - {str(e)}")
+        return False
+    except ConnectionError as e:
+        logger.error(f"CRÍTICO - Error de conexión a Supabase Storage: {str(e)}")
+        return False
     except Exception as e:
-        error_msg = f"Error subiendo a Storage: {str(e)}"
-        logger.error(error_msg)
-        raise Exception(error_msg)
+        logger.error(f"CRÍTICO - Error subiendo a Storage '{filename}': {str(e)}")
+        return False
 
 
 def download_audio_from_storage(filename: str, save_to: str) -> bool:
@@ -183,16 +189,18 @@ def save_recording_to_db(filename: str, filepath: str, transcription: Optional[s
     try:
         db = init_supabase()
         if db is None:
-            logger.error("No se pudo conectar a Supabase")
-            logger.error(f"Error: Supabase no inicializado para guardar: {filename}")
+            logger.error("CRÍTICO: No se pudo conectar a Supabase")
             return None
         
         # Primero intentar subir a Storage ANTES de guardar en BD
         # Esto asegura que el archivo esté disponible antes de registrarlo
+        logger.info(f"[1/2] Subiendo audio a Storage...")
         if not upload_audio_to_storage(filename, filepath):
-            logger.error(f"CRÍTICO: No se pudo subir {filename} a Storage. Abortando guardado.")
+            logger.error(f"[FALLO] No se pudo subir {filename} a Storage. Abortando guardado en BD.")
             return None
         
+        # Si Storage fue exitoso, guardar en BD
+        logger.info(f"[2/2] Guardando metadata en BD...")
         data = {
             "filename": filename,
             "filepath": filepath,
@@ -203,12 +211,16 @@ def save_recording_to_db(filename: str, filepath: str, transcription: Optional[s
         response = db.table("recordings").insert(data).execute()
         
         if response.data:
-            logger.info(f"Guardado en Supabase: {filename} (con Storage exitoso)")
             recording_id = response.data[0]["id"]
+            logger.info(f"✓ ÉXITO: Audio '{filename}' guardado en Supabase Storage + BD (ID: {recording_id})")
             return recording_id
         else:
-            logger.warning(f"No se guardó correctamente en BD")
+            logger.warning(f"[FALLO] No se guardó en BD correctamente, pero está en Storage")
             return None
+            
+    except Exception as e:
+        logger.error(f"[CRÍTICO] Error en save_recording_to_db: {str(e)}")
+        return None
     except Exception as e:
         logger.error(f"Error guardando: {str(e)}")
         return None
