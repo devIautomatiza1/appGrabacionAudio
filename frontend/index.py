@@ -311,7 +311,7 @@ with col_right:
                     # Si está en modo renombrado, mostrar formulario
                     if st.session_state.get(f"show_rename_{rec_id}", False):
                         with st.form(key=f"rename_form_{rec_id}"):
-                            col_input, col_btn = st.columns([3, 1])
+                            col_input, col_btn1, col_btn2 = st.columns([4, 1, 1])
                             with col_input:
                                 new_name = st.text_input(
                                     "Nuevo nombre:",
@@ -319,11 +319,12 @@ with col_right:
                                     placeholder="Ingresa el nuevo nombre...",
                                     label_visibility="collapsed"
                                 )
-                            with col_btn:
+                            with col_btn1:
                                 rename_submitted = st.form_submit_button("✓", use_container_width=True, type="primary")
+                            with col_btn2:
+                                cancel_submitted = st.form_submit_button("✗", use_container_width=True)
                             
-                            col_cancel = st.columns(1)[0]
-                            if st.form_submit_button("✗ Cancelar", use_container_width=False):
+                            if cancel_submitted:
                                 st.session_state[f"show_rename_{rec_id}"] = False
                                 st.rerun()
                             
@@ -343,21 +344,17 @@ with col_right:
                                 else:
                                     show_warning("El nuevo nombre es igual al actual")
                     else:
-                        # Tarjeta con botón integrado
-                        col_card, col_btn = st.columns([5, 1])
-                        with col_card:
-                            st.markdown(f'''
-                            <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1);">
-                                <div>
-                                    <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
-                                    <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
-                                </div>
-                            </div>
-                            ''', unsafe_allow_html=True)
-                        with col_btn:
-                            if st.button("✏️", key=f"btn_rename_{rec_id}", use_container_width=True, help="Renombrar"):
-                                st.session_state[f"show_rename_{rec_id}"] = True
-                                st.rerun()
+                        # Tarjeta clickeable - usar button con HTML
+                        if st.button(
+                            f"{display_name} {transcribed_badge}",
+                            key=f"card_{rec_id}",
+                            use_container_width=True,
+                            help="Haz clic para renombrar"
+                        ):
+                            st.session_state[f"show_rename_{rec_id}"] = True
+                            st.rerun()
+                        
+                        st.caption("Selecciona en la pestaña \"Transcribir\"")
                     
                     st.markdown("")  # Espaciado
                 
