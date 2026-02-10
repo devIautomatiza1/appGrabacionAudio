@@ -575,10 +575,21 @@ st.markdown("")
 # SECCIÓN DE CHAT
 
 if st.session_state.get("chat_enabled", False):
-    st.markdown('<div class="glass-card" style="padding: 24px; margin: 20px 0;">', unsafe_allow_html=True)
+    # Contenedor principal del chat con glass-card mejorado
+    st.markdown('''
+    <div class="glass-card" style="padding: 32px; margin: 40px 0; background: rgba(26, 29, 46, 0.4); backdrop-filter: blur(30px); border: 1px solid rgba(139, 92, 246, 0.3);">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <div style="display: inline-block; width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #8b5cf6); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);">
+                <span style="font-size: 32px;">💬</span>
+            </div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
     
+    st.markdown("<div style='margin-top: -32px;'>", unsafe_allow_html=True)
     st.header("Asistente IA para Análisis de Reuniones")
-    st.caption(f"Conversando sobre: {st.session_state.get('selected_audio', 'audio')}")
+    st.caption(f"💬 Conversando sobre: {st.session_state.get('selected_audio', 'audio')}")
+    st.markdown("</div>", unsafe_allow_html=True)
     
     if st.session_state.get("keywords"):
         keywords_list = list(st.session_state.get("keywords", {}).keys())
@@ -590,9 +601,13 @@ if st.session_state.get("chat_enabled", False):
         # Mensaje de bienvenida inicial
         st.session_state.chat_history.append("🤖 **IA**: Hola, soy tu asistente de análisis. Estoy aquí para ayudarte a entender tu reunión y extraer información relevante. Cuéntame qué te gustaría analizar.")
     
+    st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+    
     # Mostrar historial de chat con estilo profesional
     if st.session_state.chat_history:
+        # Contenedor del chat con fondo y blur mejorado
         st.markdown("""
+        <div style="background: rgba(26, 29, 46, 0.3); backdrop-filter: blur(10px); border-radius: 20px; padding: 24px; margin: 20px 0; border: 1px solid rgba(139, 92, 246, 0.2); max-height: 600px; overflow-y: auto;">
         <div class="chat-container">
         """, unsafe_allow_html=True)
         
@@ -616,12 +631,11 @@ if st.session_state.get("chat_enabled", False):
                 </div>
                 """, unsafe_allow_html=True)
         
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div></div>", unsafe_allow_html=True)
     
-    # Campo de entrada centrado
-    col_left, col_input, col_right = st.columns([1, 3, 1])
-    with col_input:
-        user_input = st.chat_input("Escribe tu pregunta o solicitud de análisis...")
+    # Campo de entrada más amplio
+    st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+    user_input = st.chat_input("💭 Escribe tu pregunta o solicitud de análisis...")
     
     if user_input:
         st.session_state.chat_history.append(f"👤 **Usuario**: {user_input}")
@@ -641,8 +655,6 @@ if st.session_state.get("chat_enabled", False):
                 st.rerun()
             except Exception as e:
                 show_error(f"Error al generar respuesta: {e}")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 else:
     show_info_expanded("Carga un audio y transcríbelo para habilitar el chat.")
 
