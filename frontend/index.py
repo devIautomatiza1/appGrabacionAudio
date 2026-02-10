@@ -172,11 +172,13 @@ with col2:
                 filtered_recordings,
                 format_func=lambda x: format_recording_name(x) + (
                     " ✓ Transcrito" if is_audio_transcribed(x, db_utils) else ""
-                )
+                ),
+                key=f"selectbox_audio_{len(filtered_recordings)}"  # Key dinámico para reinicializar al cambiar lista
             )
             
             if selected_audio:
                 # Cargar transcripción existente automáticamente si existe
+                # Usar always_load_transcription para forzar carga si viene de una eliminación
                 if selected_audio != st.session_state.get("loaded_audio"):
                     existing_transcription = db_utils.get_transcription_by_filename(selected_audio)
                     if existing_transcription:
@@ -186,6 +188,13 @@ with col2:
                         st.session_state.chat_enabled = True
                         st.session_state.keywords = {}
                         show_info_expanded("Transcripción cargada desde Supabase")
+                    else:
+                        # Si no existe transcripción, marcar que se cargó este audio (pero sin transcripción)
+                        st.session_state.selected_audio = selected_audio
+                        st.session_state.loaded_audio = selected_audio
+                        st.session_state.chat_enabled = False
+                        st.session_state.contexto = None
+                        st.session_state.keywords = {}
                 
                 col_play, col_transcribe, col_delete = st.columns([1, 1, 1])
                 
