@@ -2,6 +2,8 @@
 Funciones centralizadas para mostrar notificaciones con toast automático
 """
 import streamlit as st
+import time
+from datetime import datetime
 
 
 # Configuración de estilos por tipo de notificación
@@ -26,6 +28,20 @@ TOAST_ICONS = {
     "info": "ℹ",
 }
 
+# Colores para toasts
+TOAST_COLORS = {
+    "success": {"bg": "#10b981", "text": "white"},  # Verde
+    "error": {"bg": "#ef4444", "text": "white"},    # Rojo
+    "warning": {"bg": "#f59e0b", "text": "white"},  # Amarillo
+    "info": {"bg": "#3b82f6", "text": "white"}      # Azul
+}
+
+
+def _initialize_toast_state() -> None:
+    """Inicializar session_state para toasts si no existe"""
+    if "toasts" not in st.session_state:
+        st.session_state.toasts = []
+
 
 def _show_toast(message: str, notification_type: str, duration: int = 3) -> None:
     """
@@ -36,11 +52,83 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
         notification_type: Tipo de notificación ('success', 'error', 'warning', 'info')
         duration: Segundos hasta desvanecerse (default: 3)
     """
-    icon = TOAST_ICONS.get(notification_type, "•")
+    _initialize_toast_state()
     
-    # Usar st.toast para mostrar notificaciones automáticas en esquina
-    # El mensaje incluye el icono, no usar icon= que espera emoji específico
-    st.toast(f"{icon} {message}")
+    icon = TOAST_ICONS.get(notification_type, "•")
+    color = TOAST_COLORS.get(notification_type, TOAST_COLORS["info"])
+    
+    # Agregar notificación a la lista
+    toast_id = f"{notification_type}_{datetime.now().timestamp()}"
+    st.session_state.toasts.append({
+        "id": toast_id,
+        "message": message,
+        "icon": icon,
+        "type": notification_type,
+        "color": color,
+        "duration": duration,
+        "created_at": datetime.now()
+    })
+    
+    # Renderizar CSS de animación y contenedor
+    st.html(f"""
+    <style>
+        @keyframes slideInRight {{
+            from {{
+                opacity: 0;
+                transform: translateX(400px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateX(0);
+            }}
+        }}
+        
+        @keyframes fadeOut {{
+            from {{
+                opacity: 1;
+                transform: translateX(0);
+            }}
+            to {{
+                opacity: 0;
+                transform: translateX(400px);
+            }}
+        }}
+    </style>
+    """)
+    
+    # Renderizar notificación con contenedor fijo
+    st.html(f"""
+    <div id="{toast_id}" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: {color['bg']};
+        color: {color['text']};
+        padding: 16px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 15px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        z-index: 9999;
+        max-width: 300px;
+        word-wrap: break-word;
+        animation: slideInRight 0.3s ease-out;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    ">
+        <span style="margin-right: 8px;">{icon}</span>{message}
+    </div>
+    <script>
+        setTimeout(() => {{
+            const elem = document.getElementById('{toast_id}');
+            if (elem) {{
+                elem.style.animation = 'fadeOut 0.3s ease-out forwards';
+                setTimeout(() => {{
+                    elem.remove();
+                }}, 300);
+            }}
+        }}, {duration * 1000});
+    </script>
+    """)
 
 
 def _show_notification(message: str, notification_type: str) -> None:
@@ -72,21 +160,12 @@ def _show_notification_expanded(message: str, notification_type: str) -> None:
         notification_type: Tipo de notificación ('success', 'error', 'info', 'warning')
     """
     icon = NOTIFICATION_STYLES.get(notification_type, {}).get("icon", "•")
-    
-    # Colores personalizados para cada tipo
-    colors = {
-        "success": {"bg": "#10b981", "text": "white"},  # Verde
-        "error": {"bg": "#ef4444", "text": "white"},    # Rojo
-        "warning": {"bg": "#f59e0b", "text": "white"},  # Amarillo
-        "info": {"bg": "#3b82f6", "text": "white"}      # Azul
-    }
-    
-    color_style = colors.get(notification_type, colors["info"])
+    color = TOAST_COLORS.get(notification_type, TOAST_COLORS["info"])
     
     st.markdown(f"""
     <div style="
-        background-color: {color_style['bg']};
-        color: {color_style['text']};
+        background-color: {color['bg']};
+        color: {color['text']};
         padding: 12px 16px;
         border-radius: 8px;
         margin: 8px 0;
