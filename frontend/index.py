@@ -500,7 +500,7 @@ if st.session_state.get("chat_enabled", False):
             with st.expander(expander_title, expanded=is_expanded):
                 # Usar un formulario para evitar recargas al cambiar los valores
                 with st.form(key=f"form_{original_idx}"):
-                    col_opp1, col_opp2 = st.columns([2, 1])
+                    col_opp1, col_opp2 = st.columns([3, 2])
                     
                     with col_opp1:
                         st.markdown("**Contexto encontrado en el audio:**")
@@ -516,7 +516,7 @@ if st.session_state.get("chat_enabled", False):
                             "Notas y resumen:",
                             value=opp.get('notes', ''),
                             placeholder="Escribe el resumen de esta oportunidad de negocio...",
-                            height=100
+                            height=120
                         )
                     
                     with col_opp2:
@@ -546,8 +546,13 @@ if st.session_state.get("chat_enabled", False):
                         )
                         new_priority = priority_options[selected_priority_label]
 
-                    # Botón de guardar dentro del formulario
-                    submitted = st.form_submit_button("💾 Guardar cambios", use_container_width=True, type="primary")
+                    # Botones en columnas
+                    col_btn1, col_btn2 = st.columns(2)
+                    with col_btn1:
+                        submitted = st.form_submit_button("Guardar cambios", use_container_width=True, type="primary")
+                    with col_btn2:
+                        # Placeholder para mantener el layout
+                        st.markdown("")
                     
                     if submitted:
                         updates = {
@@ -563,22 +568,24 @@ if st.session_state.get("chat_enabled", False):
                             show_error_expanded("⚠️ Error al guardar")
                 
                 # Botón de eliminar FUERA del formulario
-                if st.button("🗑️ Eliminar ticket", key=f"delete_{original_idx}", use_container_width=True, type="secondary"):
-                    st.session_state.opp_delete_confirmation[original_idx] = True
-                    st.rerun()
+                col_del1, col_del2 = st.columns([1, 1])
+                with col_del2:
+                    if st.button("Eliminar ticket", key=f"delete_{original_idx}", use_container_width=True):
+                        st.session_state.opp_delete_confirmation[original_idx] = True
+                        st.rerun()
                 
                 if st.session_state.opp_delete_confirmation.get(original_idx):
-                    st.warning(f"⚠️ ¿Eliminar '{opp['keyword']}'?")
+                    st.warning(f"⚠️ ¿Estás seguro de eliminar '{opp['keyword']}'?")
                     col_yes, col_no = st.columns(2)
                     with col_yes:
-                        if st.button("✓ Sí, eliminar", key=f"opp_confirm_yes_{original_idx}", use_container_width=True):
+                        if st.button("Sí, eliminar", key=f"opp_confirm_yes_{original_idx}", use_container_width=True):
                             if opp_manager.delete_opportunity(opp['id']):
                                 delete_opportunity_local(original_idx)
                                 st.session_state.opp_delete_confirmation.pop(original_idx, None)
                                 show_success_expanded("✓ Oportunidad eliminada")
                                 st.rerun()
                     with col_no:
-                        if st.button("✗ Cancelar", key=f"opp_confirm_no_{original_idx}", use_container_width=True):
+                        if st.button("Cancelar", key=f"opp_confirm_no_{original_idx}", use_container_width=True):
                             st.session_state.opp_delete_confirmation.pop(original_idx, None)
                             st.rerun()
 
