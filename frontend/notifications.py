@@ -69,26 +69,28 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
         
         .toast {{
             position: fixed;
-            top: 20px;
+            top: 100px;
             right: 20px;
-            background: {bg};
+            background: rgba(31, 41, 55, 0.95);
             color: {text};
             padding: 16px 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             border-left: 4px solid {text};
             font-weight: 600;
             font-size: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             z-index: 99999;
-            max-width: 300px;
+            max-width: 320px;
             word-wrap: break-word;
             font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
-            animation: slideInRight 0.3s ease-out;
+            animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }}
     </style>
     
     <div class="toast">
-        <span>{icon}</span> {message}
+        <span style="margin-right: 10px; font-size: 18px;">{icon}</span> {message}
     </div>
     """, unsafe_allow_html=True)
 
