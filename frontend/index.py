@@ -166,7 +166,6 @@ with col_left:
 # PANEL DERECHO - Audios Guardados y Transcripción
 # ============================================================================
 with col_right:
-    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
     st.header("Gestión de Audios")
     st.caption("Transcribe, busca y administra tus grabaciones")
     st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
