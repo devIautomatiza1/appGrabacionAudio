@@ -498,24 +498,24 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
         col_spacer, col_btn, col_spacer2 = st.columns([1, 3, 1])
         with col_btn:
             if st.button("🎯 Analizar y Generar Oportunidades", use_container_width=True, type="primary"):
-            with st.spinner("Analizando transcripción..."):
-                keywords_list = list(st.session_state.keywords.keys())
-                opportunities = opp_manager.extract_opportunities(
-                    st.session_state.contexto,
-                    keywords_list
-                )
-                
-                saved_count = 0
-                for opp in opportunities:
-                    opp_manager.save_opportunity(opp, st.session_state.selected_audio)
-                    saved_count += 1
-                
-                if saved_count > 0:
-                    show_success_expanded(f"{saved_count} ticket(s) de oportunidad generado(s)")
-                    add_debug_event(f"Generados {saved_count} ticket(s) de oportunidad", "success")
-                    st.session_state.show_opportunities = True
-                else:
-                    show_warning_expanded("No se encontraron oportunidades con las palabras clave")
+                with st.spinner("Analizando transcripción..."):
+                    keywords_list = list(st.session_state.keywords.keys())
+                    opportunities = opp_manager.extract_opportunities(
+                        st.session_state.contexto,
+                        keywords_list
+                    )
+                    
+                    saved_count = 0
+                    for opp in opportunities:
+                        opp_manager.save_opportunity(opp, st.session_state.selected_audio)
+                        saved_count += 1
+                    
+                    if saved_count > 0:
+                        show_success_expanded(f"{saved_count} ticket(s) de oportunidad generado(s)")
+                        add_debug_event(f"Generados {saved_count} ticket(s) de oportunidad", "success")
+                        st.session_state.show_opportunities = True
+                    else:
+                        show_warning_expanded("No se encontraron oportunidades con las palabras clave")
 
 st.markdown("")
 st.markdown("")
