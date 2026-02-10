@@ -9,25 +9,59 @@ from functools import lru_cache
 from typing import List, Dict, Any, Optional
 
 # ============================================================================
-# CACHÉ AGRESIVO PARA TRANSCRIPCIONES
+# CAÓHE INTELIGENTE PARA TRANSCRIPCIONES
 # ============================================================================
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)  # Reducir TTL a 5 minutos para audios nuevos
 def get_transcription_cached(filename: str, db_utils) -> Optional[str]:
-    """
-    Obtiene transcripción con caché de 1 hora
+    """Obtiene transcripción con caché inteligente (5 min)
+    
+    IMPORTANTE: El caché sólo dura 5 minutos por defecto.
+    Para audios nuevos, siempre verifica DB para estado correcto.
     
     Args:
         filename: Nombre del archivo
         db_utils: Módulo de base de datos
         
     Returns:
-        Transcripción o None si no existe
+        Transcripción (string) si existe, None si NO EXISTE
+        
+    Nota:
+        - Retorna str si transcrito (tiene contenido)
+        - Retorna None si NO transcrito
+        - El caché dura 5 minutos (no 1 hora) para mantener actualizado
     """
     try:
-        return db_utils.get_transcription_by_filename(filename)
+        result = db_utils.get_transcription_by_filename(filename)
+        # Retornar SOLO si tiene contenido real
+        return result.get("content") if isinstance(result, dict) and result.get("content") else None
     except Exception:
         return None
+
+def is_audio_transcribed(filename: str, db_utils) -> bool:
+    """Verifica EXPLICITAMENTE si un audio está transcrito (SIN caché)
+    
+    Usa verificación directa para audios nuevos.
+    
+    Args:
+        filename: Nombre del archivo
+        db_utils: Módulo de base de datos
+        
+    Returns:
+        True sólo si la transcripción tiene contenido real
+    """
+    try:
+        # Consulta DIRECTA sin caché para audios nuevos
+        result = db_utils.get_transcription_by_filename(filename)
+        if not result:
+            return False
+        
+        # Verificar que REALMENTE tiene contenido
+        content = result.get("content", "") if isinstance(result, dict) else result
+        return bool(content and content.strip())  # No es "vacío"
+    except Exception:
+        return False
+
 
 
 @st.cache_data(ttl=600, show_spinner=False)

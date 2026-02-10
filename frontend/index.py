@@ -23,7 +23,7 @@ from notifications import (
     show_success_debug, show_error_debug, show_info_debug
 )
 from utils import process_audio_file, delete_audio
-from performance import get_transcription_cached, update_opportunity_local, delete_opportunity_local, delete_keyword_local, delete_recording_local, init_optimization_state
+from performance import get_transcription_cached, is_audio_transcribed, update_opportunity_local, delete_opportunity_local, delete_keyword_local, delete_recording_local, init_optimization_state
 from helpers import format_recording_name
 
 # Importar de backend
@@ -154,10 +154,10 @@ with col2:
                 st.markdown(f"**📌 {len(filtered_recordings)} resultado(s):**")
                 for recording in filtered_recordings:
                     display_name = format_recording_name(recording)
-                    # Usar @st.cache_data para evitar múltiples queries (50x más rápido)
-                    transcription = get_transcription_cached(recording, db_utils)
-                    is_transcribed = " ✓ Transcrito" if transcription else ""
-                    st.caption(f"🎵 {display_name}{is_transcribed}")
+                    # Usar verificación DIRECTA para audios nuevos
+                    is_transcribed = is_audio_transcribed(recording, db_utils)
+                    transcribed_badge = " ✓ Transcrito" if is_transcribed else ""
+                    st.caption(f"🎵 {display_name}{transcribed_badge}")
             else:
                 show_warning_expanded(f"No se encontraron audios con '{search_query}'")
         else:
@@ -171,7 +171,7 @@ with col2:
                 "Selecciona un audio para transcribir",
                 filtered_recordings,
                 format_func=lambda x: format_recording_name(x) + (
-                    " ✓ Transcrito" if get_transcription_cached(x, db_utils) else ""
+                    " ✓ Transcrito" if is_audio_transcribed(x, db_utils) else ""
                 )
             )
             
