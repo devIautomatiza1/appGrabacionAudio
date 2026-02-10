@@ -69,8 +69,9 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
         "created_at": datetime.now()
     })
     
-    # Renderizar CSS de animación y contenedor
-    st.html(f"""
+    # Inyectar CSS y JavaScript para crear toasts en el DOM raíz
+    # Esto asegura que position: fixed funcione correctamente en el viewport
+    st.markdown(f"""
     <style>
         @keyframes slideInRight {{
             from {{
@@ -93,42 +94,76 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
                 transform: translateX(400px);
             }}
         }}
+        
+        .streamlit-toast-container {{
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            pointer-events: none;
+        }}
+        
+        .streamlit-toast {{
+            position: relative;
+            margin-bottom: 12px;
+            pointer-events: auto;
+            animation: slideInRight 0.3s ease-out;
+        }}
     </style>
-    """)
     
-    # Renderizar notificación con contenedor fijo
-    st.html(f"""
-    <div id="{toast_id}" style="
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background-color: {color['bg']};
-        color: {color['text']};
-        padding: 16px 20px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 15px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        z-index: 9999;
-        max-width: 300px;
-        word-wrap: break-word;
-        animation: slideInRight 0.3s ease-out;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    ">
-        <span style="margin-right: 8px;">{icon}</span>{message}
-    </div>
+    <div class="streamlit-toast-container" id="streamlit-toast-container"></div>
+    
     <script>
-        setTimeout(() => {{
-            const elem = document.getElementById('{toast_id}');
-            if (elem) {{
-                elem.style.animation = 'fadeOut 0.3s ease-out forwards';
-                setTimeout(() => {{
-                    elem.remove();
-                }}, 300);
+        (function() {{
+            // Obtener o crear contenedor
+            let container = document.getElementById('streamlit-toast-container');
+            if (!container) {{
+                container = document.createElement('div');
+                container.className = 'streamlit-toast-container';
+                container.id = 'streamlit-toast-container';
+                document.body.appendChild(container);
             }}
-        }}, {duration * 1000});
+            
+            // Crear toast
+            const toast = document.createElement('div');
+            toast.id = '{toast_id}';
+            toast.className = 'streamlit-toast';
+            toast.innerHTML = `
+                <div style="
+                    background-color: {color['bg']};
+                    color: {color['text']};
+                    padding: 16px 20px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    font-size: 15px;
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                    max-width: 300px;
+                    word-wrap: break-word;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                ">
+                    <span>{icon}</span>
+                    <span>{message}</span>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto-remover después de duration segundos
+            setTimeout(() => {{
+                const elem = document.getElementById('{toast_id}');
+                if (elem) {{
+                    elem.style.animation = 'fadeOut 0.3s ease-out forwards';
+                    setTimeout(() => {{
+                        elem.remove();
+                    }}, 300);
+                }}
+            }}, {duration * 1000});
+        }})();
     </script>
-    """)
+    """, unsafe_allow_html=True)
 
 
 def _show_notification(message: str, notification_type: str) -> None:
