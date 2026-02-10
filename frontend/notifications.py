@@ -39,7 +39,8 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
     icon = TOAST_ICONS.get(notification_type, "•")
     
     # Usar st.toast para mostrar notificaciones automáticas en esquina
-    st.toast(f"{icon} {message}", icon=notification_type)
+    # El mensaje incluye el icono, no usar icon= que espera emoji específico
+    st.toast(f"{icon} {message}")
 
 
 def _show_notification(message: str, notification_type: str) -> None:
