@@ -97,9 +97,6 @@ initialize_session_state(recorder)
 # Inicializar optimizaciones de performance
 init_optimization_state()
 
-# Renderizar header personalizado
-components.render_header()
-
 # Crear dos columnas principales (4/8 split como en el diseño)
 col_left, col_right = st.columns([4, 8])
 
@@ -107,119 +104,96 @@ col_left, col_right = st.columns([4, 8])
 # PANEL IZQUIERDO - Recording & Audio Library
 # ============================================================================
 with col_left:
-    # ===== RECORDING PANEL =====
-    st.markdown('''
-    <div class="glass-card">
-        <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-            <span style="font-size: 20px;">🎤</span>
-            Live Recorder
-        </h3>
-    ''', unsafe_allow_html=True)
+    # Tabs para Live Recorder, Upload y Saved Recordings
+    tab_record, tab_upload, tab_saved = st.tabs(["🎤 Live Recorder", "📤 Upload Audio", "🔊 Saved Recordings"])
     
-    st.caption("Graba directamente desde tu micrófono")
-    
-    audio_data = st.audio_input("", key=f"audio_recorder_{st.session_state.record_key_counter}", label_visibility="collapsed")
-    
-    # Procesar audio grabado SOLO UNA VEZ por hash
-    if audio_data is not None:
-        audio_bytes = audio_data.getvalue()
-        if len(audio_bytes) > 0:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"recording_{timestamp}.wav"
-            
-            success, recording_id = process_audio_file(audio_bytes, filename, recorder, db_utils)
-            
-            if success:
-                # Reset el widget para que no se procese nuevamente
-                st.session_state.record_key_counter += 1
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # ===== UPLOAD PANEL =====
-    st.markdown('''
-    <div class="glass-card" style="margin-top: 16px;">
-        <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-            <span style="font-size: 20px;">📤</span>
-            Upload Audio
-        </h3>
-    ''', unsafe_allow_html=True)
-    
-    uploaded_file = st.file_uploader(
-        "Selecciona un archivo de audio",
-        type=list(AUDIO_EXTENSIONS),
-        key=f"audio_uploader_{st.session_state.upload_key_counter}",
-        label_visibility="collapsed"
-    )
-    
-    if uploaded_file is not None:
-        audio_bytes = uploaded_file.read()
-        if len(audio_bytes) > 0:
-            filename = uploaded_file.name
-            
-            success, recording_id = process_audio_file(audio_bytes, filename, recorder, db_utils)
-            
-            if success:
-                # Reset el widget para que no se procese nuevamente
-                st.session_state.upload_key_counter += 1
-    
-    st.caption("Formatos soportados: MP3, WAV, M4A")
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # ===== AUDIO LIBRARY =====
-    st.markdown('''
-    <div class="glass-card" style="margin-top: 16px;">
-    ''', unsafe_allow_html=True)
-    
-    # Refresh de la lista de audios desde Supabase
-    recordings = recorder.get_recordings_from_supabase()
-    st.session_state.recordings = recordings
-    
-    # Renderizar título con contador
-    components.render_section_title("Saved Recordings", "🔊", len(recordings))
-    
-    if recordings:
-        # Búsqueda
-        search_query = components.render_search_box("Search recordings...", "audio_search")
+    # ===== TAB: LIVE RECORDER =====
+    with tab_record:
+        st.caption("Graba directamente desde tu micrófono")
         
-        # Filtrar audios
-        if search_query.strip():
-            search_safe = re.escape(search_query.strip())
-            filtered_recordings = [
-                r for r in recordings 
-                if search_safe.lower() in r.lower()
-            ]
-        else:
-            filtered_recordings = recordings
+        audio_data = st.audio_input("", key=f"audio_recorder_{st.session_state.record_key_counter}", label_visibility="collapsed")
         
-        # Mostrar resultados o estado vacío
-        if filtered_recordings:
-            st.markdown(f'''
-            <div style="max-height: 400px; overflow-y: auto; margin-top: 12px;">
-            ''', unsafe_allow_html=True)
-            
-            for recording in filtered_recordings[:10]:  # Mostrar solo 10 primeros
-                display_name = format_recording_name(recording)
-                is_transcribed = is_audio_transcribed(recording, db_utils)
-                transcribed_badge = components.render_badge("✓ Transcribed", "transcribed") if is_transcribed else ""
+        # Procesar audio grabado SOLO UNA VEZ por hash
+        if audio_data is not None:
+            audio_bytes = audio_data.getvalue()
+            if len(audio_bytes) > 0:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"recording_{timestamp}.wav"
                 
+                success, recording_id = process_audio_file(audio_bytes, filename, recorder, db_utils)
+                
+                if success:
+                    # Reset el widget para que no se procese nuevamente
+                    st.session_state.record_key_counter += 1
+    
+    # ===== TAB: UPLOAD AUDIO =====
+    with tab_upload:
+        uploaded_file = st.file_uploader(
+            "Selecciona un archivo de audio",
+            type=list(AUDIO_EXTENSIONS),
+            key=f"audio_uploader_{st.session_state.upload_key_counter}"
+        )
+        
+        if uploaded_file is not None:
+            audio_bytes = uploaded_file.read()
+            if len(audio_bytes) > 0:
+                filename = uploaded_file.name
+                
+                success, recording_id = process_audio_file(audio_bytes, filename, recorder, db_utils)
+                
+                if success:
+                    # Reset el widget para que no se procese nuevamente
+                    st.session_state.upload_key_counter += 1
+        
+        st.caption("Formatos soportados: MP3, WAV, M4A")
+    
+    # ===== TAB: SAVED RECORDINGS =====
+    with tab_saved:
+        # Refresh de la lista de audios desde Supabase
+        recordings = recorder.get_recordings_from_supabase()
+        st.session_state.recordings = recordings
+        
+        if recordings:
+            st.caption(f"Total: {len(recordings)} grabaciones")
+            
+            # Búsqueda
+            search_query = components.render_search_box("Search recordings...", "audio_search")
+            
+            # Filtrar audios
+            if search_query.strip():
+                search_safe = re.escape(search_query.strip())
+                filtered_recordings = [
+                    r for r in recordings 
+                    if search_safe.lower() in r.lower()
+                ]
+            else:
+                filtered_recordings = recordings
+            
+            # Mostrar resultados o estado vacío
+            if filtered_recordings:
                 st.markdown(f'''
-                <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="max-height: 450px; overflow-y: auto; margin-top: 12px;">
+                ''', unsafe_allow_html=True)
+                
+                for recording in filtered_recordings:
+                    display_name = format_recording_name(recording)
+                    is_transcribed = is_audio_transcribed(recording, db_utils)
+                    transcribed_badge = components.render_badge("✓ Transcribed", "transcribed") if is_transcribed else ""
+                    
+                    st.markdown(f'''
+                    <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1); cursor: pointer;">
                         <div>
                             <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
-                            <div style="font-size: 11px; color: var(--muted-foreground);">Click para seleccionar</div>
+                            <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en el panel derecho</div>
                         </div>
                     </div>
-                </div>
-                ''', unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
+                    ''', unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                components.render_empty_state("🔍", f"No se encontraron grabaciones para '{search_query}'")
         else:
-            components.render_empty_state("🔍", f"No recordings found for '{search_query}'")
-    else:
-        components.render_empty_state("🔊", "No recordings yet. Start by recording or uploading audio!")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+            components.render_empty_state("🔊", "No hay grabaciones. ¡Comienza grabando o subiendo audio!")
 
 # ============================================================================
 # PANEL DERECHO - Opportunities Board & Transcription
