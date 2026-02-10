@@ -299,19 +299,46 @@ with col_right:
             if filtered_recordings:
                 st.markdown(f'''<div style="max-height: 500px; overflow-y: auto; margin-top: 12px;">''', unsafe_allow_html=True)
                 
-                for recording in paginated_recordings:
+                for idx, recording in enumerate(paginated_recordings):
                     display_name = format_recording_name(recording)
                     is_transcribed = is_audio_transcribed(recording, db_utils)
                     transcribed_badge = components.render_badge("Transcrito", "transcribed") if is_transcribed else ""
                     
-                    st.markdown(f'''
-                    <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1); cursor: pointer;">
-                        <div>
-                            <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
-                            <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
-                        </div>
-                    </div>
-                    ''', unsafe_allow_html=True)
+                    # ID único para el expander
+                    rec_id = f"rec_{start_idx + idx}"
+                    
+                    with st.expander(f"{display_name} {transcribed_badge}", expanded=False):
+                        # Formulario para renombrar
+                        with st.form(key=f"rename_form_{rec_id}"):
+                            new_name = st.text_input(
+                                "Nuevo nombre:",
+                                value=recording.rsplit('.', 1)[0],  # Sin extensión
+                                placeholder="Ingresa el nuevo nombre..."
+                            )
+                            
+                            col_r1, col_r2 = st.columns(2)
+                            with col_r1:
+                                rename_submitted = st.form_submit_button("Renombrar", use_container_width=True, type="primary")
+                            with col_r2:
+                                st.markdown("")
+                            
+                            if rename_submitted and new_name.strip():
+                                new_name_clean = new_name.strip()
+                                # Mantener la extensión original
+                                ext = recording.split('.')[-1]
+                                new_filename = f"{new_name_clean}.{ext}"
+                                
+                                if new_filename != recording:
+                                    if recorder.rename_recording(recording, new_filename):
+                                        show_success(f"Renombrado: {recording} → {new_filename}")
+                                        add_debug_event(f"Grabación renombrada: {recording} → {new_filename}", "success")
+                                        st.rerun()
+                                    else:
+                                        show_error("Error al renombrar la grabación")
+                                else:
+                                    show_warning("El nuevo nombre es igual al actual")
+                        
+                        st.caption(f"📁 Archivo: {recording}")
                 
                 st.markdown('</div>', unsafe_allow_html=True)
                 
