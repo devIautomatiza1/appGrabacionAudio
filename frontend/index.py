@@ -123,8 +123,6 @@ with col_left:
                 # Reset el widget para que no se procese nuevamente
                 st.session_state.record_key_counter += 1
     
-    st.markdown("---")
-    
     # ===== SUBIR ARCHIVO DE AUDIO =====
     st.subheader("Subir archivo de audio")
     uploaded_file = st.file_uploader(
@@ -156,53 +154,10 @@ with col_right:
     
     if recordings:
         # Tabs para diferentes secciones
-        tab1, tab2, tab3 = st.tabs(["Audios guardados", "Transcribir", "Gestión en lote"])
+        tab1, tab2, tab3 = st.tabs(["Transcribir", "Audios guardados", "Gestión en lote"])
         
-        # ===== TAB 1: AUDIOS GUARDADOS (BÚSQUEDA) =====
+        # ===== TAB 1: TRANSCRIBIR =====
         with tab1:
-            st.caption(f"Total: {len(recordings)} grabaciones")
-            
-            # Búsqueda
-            search_query = st.text_input(
-                "Buscar grabaciones",
-                placeholder="Escribe el nombre del archivo...",
-                key="audio_search"
-            )
-            
-            # Filtrar audios
-            if search_query.strip():
-                search_safe = re.escape(search_query.strip())
-                filtered_recordings = [
-                    r for r in recordings 
-                    if search_safe.lower() in r.lower()
-                ]
-            else:
-                filtered_recordings = recordings
-            
-            # Mostrar resultados
-            if filtered_recordings:
-                st.markdown(f'''<div style="max-height: 500px; overflow-y: auto; margin-top: 12px;">''', unsafe_allow_html=True)
-                
-                for recording in filtered_recordings:
-                    display_name = format_recording_name(recording)
-                    is_transcribed = is_audio_transcribed(recording, db_utils)
-                    transcribed_badge = components.render_badge("Transcrito", "transcribed") if is_transcribed else ""
-                    
-                    st.markdown(f'''
-                    <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1); cursor: pointer;">
-                        <div>
-                            <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
-                            <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
-                        </div>
-                    </div>
-                    ''', unsafe_allow_html=True)
-                
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.info(f"No se encontraron grabaciones para '{search_query}'")
-        
-        # ===== TAB 2: TRANSCRIBIR =====
-        with tab2:
             # Filtrar audios (reutilizar la búsqueda si existe)
             search_query = st.session_state.get("audio_search", "")
             if search_query and search_query.strip():
@@ -295,6 +250,49 @@ with col_right:
                             if st.button("No", key=f"confirm_no_{selected_audio}"):
                                 st.session_state.delete_confirmation.pop(selected_audio, None)
                                 st.rerun()
+        
+        # ===== TAB 2: AUDIOS GUARDADOS (BÚSQUEDA) =====
+        with tab2:
+            st.caption(f"Total: {len(recordings)} grabaciones")
+            
+            # Búsqueda
+            search_query = st.text_input(
+                "Buscar grabaciones",
+                placeholder="Escribe el nombre del archivo...",
+                key="audio_search"
+            )
+            
+            # Filtrar audios
+            if search_query.strip():
+                search_safe = re.escape(search_query.strip())
+                filtered_recordings = [
+                    r for r in recordings 
+                    if search_safe.lower() in r.lower()
+                ]
+            else:
+                filtered_recordings = recordings
+            
+            # Mostrar resultados
+            if filtered_recordings:
+                st.markdown(f'''<div style="max-height: 500px; overflow-y: auto; margin-top: 12px;">''', unsafe_allow_html=True)
+                
+                for recording in filtered_recordings:
+                    display_name = format_recording_name(recording)
+                    is_transcribed = is_audio_transcribed(recording, db_utils)
+                    transcribed_badge = components.render_badge("Transcrito", "transcribed") if is_transcribed else ""
+                    
+                    st.markdown(f'''
+                    <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1); cursor: pointer;">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
+                            <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
+                        </div>
+                    </div>
+                    ''', unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.info(f"No se encontraron grabaciones para '{search_query}'")
         
         # ===== TAB 3: GESTIÓN EN LOTE =====
         with tab3:
