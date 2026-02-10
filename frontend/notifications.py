@@ -290,7 +290,7 @@ def show_delete_confirmation_modal(item_name: str, item_type: str = "elemento") 
 
 def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento", key_prefix: str = "") -> tuple[bool, bool]:
     """
-    Mostrar modal de confirmación bonito CON BOTONES DENTRO del modal.
+    Mostrar modal de confirmación bonito CON BOTONES DENTRO del modal (HTML + JavaScript).
     
     Args:
         item_name: Nombre del elemento a eliminar
@@ -300,10 +300,10 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
     Returns:
         Tupla (confirmed: bool, cancelled: bool)
     """
-    # CSS para el modal y su contenedor
+    # CSS + HTML con botones HTML DENTRO del modal
     st.markdown(f"""
     <style>
-        .delete-modal-overlay {{
+        .delete-modal-overlay-{key_prefix} {{
             position: fixed;
             top: 0;
             left: 0;
@@ -313,7 +313,7 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 9995;
+            z-index: 9999;
             animation: fadeIn 0.25s ease-out;
         }}
         
@@ -333,19 +333,13 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
             }}
         }}
         
-        .delete-modal-wrapper-{key_prefix} {{
-            position: relative;
-            z-index: 10000;
-            width: 92%;
-            max-width: 450px;
-        }}
-        
-        .delete-modal-content {{
+        .delete-modal-content-{key_prefix} {{
             background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 40px;
-            padding-bottom: 100px;
+            max-width: 450px;
+            width: 92%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 
                         inset 1px 1px 0 rgba(255, 255, 255, 0.05),
                         0 0 40px rgba(239, 68, 68, 0.1);
@@ -399,30 +393,61 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
         .delete-modal-warning {{
             font-size: 12px;
             color: #9ca3af;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }}
         
-        .delete-modal-hint {{
-            font-size: 11px;
-            color: #6b7280;
-            padding-top: 8px;
+        .delete-modal-buttons {{
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 20px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }}
         
-        .delete-modal-buttons-container-{key_prefix} {{
-            margin-top: -80px;
-            position: relative;
-            z-index: 10001;
-            padding: 0 20px;
+        .delete-modal-btn {{
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+            transition: all 0.2s ease;
+        }}
+        
+        .delete-modal-btn-confirm {{
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }}
+        
+        .delete-modal-btn-confirm:hover {{
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.4);
+            transform: translateY(-2px);
+        }}
+        
+        .delete-modal-btn-cancel {{
+            background: rgba(255, 255, 255, 0.1);
+            color: #d1d5db;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }}
+        
+        .delete-modal-btn-cancel:hover {{
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }}
     </style>
     
-    <div class="delete-modal-overlay">
-        <div class="delete-modal-content">
+    <div class="delete-modal-overlay-{key_prefix}">
+        <div class="delete-modal-content-{key_prefix}">
             <div class="delete-modal-icon">⚠️</div>
             <div class="delete-modal-title">¿Eliminar {item_type}?</div>
             <div class="delete-modal-message">Esta acción no se puede deshacer</div>
@@ -431,29 +456,47 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
                 <span>⚡</span>
                 <span>Eliminación permanente</span>
             </div>
-            <div class="delete-modal-hint">Selecciona una opción abajo 👇</div>
+            <div class="delete-modal-buttons">
+                <button class="delete-modal-btn delete-modal-btn-confirm" onclick="document.getElementById('confirm-btn-{key_prefix}').click(); return false;">
+                    🗑️ Eliminar
+                </button>
+                <button class="delete-modal-btn delete-modal-btn-cancel" onclick="document.getElementById('cancel-btn-{key_prefix}').click(); return false;">
+                    ✕ Cancelar
+                </button>
+            </div>
         </div>
     </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {{
+            // Asegurar que los botones invisibles sean clickeables
+            var confirmBtn = document.getElementById('confirm-btn-{key_prefix}');
+            var cancelBtn = document.getElementById('cancel-btn-{key_prefix}');
+            if (confirmBtn) confirmBtn.style.display = 'none';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+        }});
+    </script>
     """, unsafe_allow_html=True)
     
-    # Contenedor de botones que visualmente está dentro del modal
-    with st.container():
-        st.markdown(f'<div class="delete-modal-buttons-container-{key_prefix}">', unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2, gap="small")
-        
-        confirmed = False
-        cancelled = False
-        
-        with col1:
-            if st.button("🗑️ Eliminar", key=f"confirm_{key_prefix}", use_container_width=True, type="primary"):
-                confirmed = True
-        
-        with col2:
-            if st.button("✕ Cancelar", key=f"cancel_{key_prefix}", use_container_width=True):
-                cancelled = True
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Botones invisibles de Streamlit que se activarán desde JavaScript
+    col1, col2 = st.columns([1, 1])
+    
+    confirmed = False
+    cancelled = False
+    
+    with col1:
+        if st.button("", key=f"confirm_{key_prefix}", label_visibility="hidden", use_container_width=False):
+            confirmed = True
+    
+    with col2:
+        if st.button("", key=f"cancel_{key_prefix}", label_visibility="hidden", use_container_width=False):
+            cancelled = True
+    
+    # HTML para referencias invisibles
+    st.markdown(f"""
+    <button id="confirm-btn-{key_prefix}" style="display: none;"></button>
+    <button id="cancel-btn-{key_prefix}" style="display: none;"></button>
+    """, unsafe_allow_html=True)
     
     return confirmed, cancelled
 
