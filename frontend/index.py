@@ -238,9 +238,11 @@ with col2:
                                     st.session_state.selected_audio = None
                                     st.session_state.delete_confirmation.pop(selected_audio, None)
                                     show_success_expanded(f"✓ '{selected_audio}' eliminado")
+                                    st.rerun()  # ACTUALIZAR UI inmediatamente
                         with col_no:
                             if st.button("✗ Cancelar", key=f"confirm_no_{selected_audio}"):
                                 st.session_state.delete_confirmation.pop(selected_audio, None)
+                                st.rerun()  # ACTUALIZAR UI inmediatamente
         
         with tab2:
             st.subheader("Eliminar múltiples audios")
@@ -277,6 +279,7 @@ with col2:
                             
                             if deleted_count > 0:
                                 show_success_expanded(f"✓ {deleted_count} audio(s) eliminado(s) - Actualización instantánea")
+                                st.rerun()  # ACTUALIZAR UI inmediatamente
                 
                 with col_cancel:
                     st.write("")
@@ -342,7 +345,8 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
             
             with col_delete:
                 if st.button("✕", key=f"del_{keyword}", use_container_width=True, help="Eliminar"):
-                    delete_keyword_local(keyword)  # Actualización local instantánea (sin st.rerun())
+                    delete_keyword_local(keyword)  # Actualización local instantánea
+                    st.rerun()  # ACTUALIZAR UI inmediatamente
         
         # Separador visual
         st.markdown("")
@@ -448,9 +452,10 @@ if st.session_state.get("chat_enabled", False):
                             "priority": new_priority
                         }
                         if opp_manager.update_opportunity(opp['id'], updates):
-                            # Actualización local instantánea (100ms en lugar de 2s)
+                            # Actualización local instantánea
                             update_opportunity_local(idx, updates)
                             show_success_expanded("✓ Cambios guardados - Actualización instantánea")
+                            st.rerun()  # ACTUALIZAR UI inmediatamente
                         else:
                             st.toast("⚠️ Error al guardar")
                 
@@ -465,13 +470,15 @@ if st.session_state.get("chat_enabled", False):
                         with col_yes:
                             if st.button("✓ Sí, eliminar", key=f"opp_confirm_yes_{idx}", use_container_width=True):
                                 if opp_manager.delete_opportunity(opp['id']):
-                                    # Actualización local instantánea (sin st.rerun())
+                                    # Actualización local instantánea
                                     delete_opportunity_local(idx)
                                     st.session_state.opp_delete_confirmation.pop(idx, None)
                                     show_success_expanded("✓ Oportunidad eliminada - Actualización instantánea")
+                                    st.rerun()  # ACTUALIZAR UI inmediatamente
                         with col_no:
                             if st.button("✗ Cancelar", key=f"opp_confirm_no_{idx}", use_container_width=True):
                                 st.session_state.opp_delete_confirmation.pop(idx, None)
+                                st.rerun()  # ACTUALIZAR UI inmediatamente
 
 st.markdown("")
 st.markdown("")
