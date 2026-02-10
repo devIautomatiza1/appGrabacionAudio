@@ -146,6 +146,21 @@ with col_left:
             if success:
                 # Reset el widget para que no se procese nuevamente
                 st.session_state.upload_key_counter += 1
+    
+    st.markdown("")
+    st.markdown("")
+    
+    # ===== REPRODUCTOR =====
+    # Mostrar reproductor si hay un audio seleccionado
+    selected_audio = st.session_state.get("selected_audio")
+    if selected_audio:
+        st.subheader("Reproductor")
+        st.caption("Audio seleccionado para transcribir")
+        
+        audio_path = recorder.get_recording_path(selected_audio)
+        extension = selected_audio.split('.')[-1]
+        with open(audio_path, "rb") as f:
+            st.audio(f.read(), format=f"audio/{extension}")
 
 # ============================================================================
 # PANEL DERECHO - Audios Guardados y Transcripción
@@ -205,19 +220,6 @@ with col_right:
                         st.session_state.chat_enabled = False
                         st.session_state.contexto = None
                         st.session_state.keywords = {}
-                
-                # Mostrar reproductor de audio en una glass-card
-                st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-                st.markdown('''
-                <div class="glass-card" style="padding: 16px; margin-bottom: 20px;">
-                    <div style="font-size: 13px; color: var(--muted-foreground); margin-bottom: 8px;">🎵 Reproductor</div>
-                </div>
-                ''', unsafe_allow_html=True)
-                
-                audio_path = recorder.get_recording_path(selected_audio)
-                extension = selected_audio.split('.')[-1]
-                with open(audio_path, "rb") as f:
-                    st.audio(f.read(), format=f"audio/{extension}")
                 
                 st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
                 
