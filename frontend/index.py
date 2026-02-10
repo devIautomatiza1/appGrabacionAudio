@@ -20,6 +20,7 @@ import styles
 from notifications import show_success, show_error, show_warning, show_info, show_success_expanded, show_error_expanded, show_info_expanded, show_warning_expanded, show_success_debug, show_error_debug, show_info_debug
 from utils import process_audio_file, delete_audio
 from performance import get_transcription_cached, update_opportunity_local, delete_opportunity_local, delete_keyword_local, delete_recording_local, init_optimization_state
+from helpers import format_recording_name
 
 # Importar de backend
 from Transcriber import Transcriber
@@ -28,8 +29,35 @@ from OpportunitiesManager import OpportunitiesManager
 import database as db_utils
 
 from datetime import datetime
+from config import CHAT_HISTORY_LIMIT
 
-# Configuración inicial de la interfaz de usuario
+# ============================================================================
+# FUNCIONES DE INICIALIZACIÓN
+# ============================================================================
+
+def initialize_session_state(recorder_obj: AudioRecorder) -> None:
+    """Inicializa todos los valores del session_state de forma centralizada"""
+    session_defaults = {
+        "processed_audios": set(),
+        "recordings": recorder_obj.get_recordings_from_supabase(),
+        "selected_audio": None,
+        "upload_key_counter": 0,
+        "record_key_counter": 0,
+        "keywords": {},
+        "delete_confirmation": {},
+        "transcription_cache": {},
+        "chat_history_limit": CHAT_HISTORY_LIMIT,
+        "opp_delete_confirmation": {}
+    }
+    
+    for key, value in session_defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+# ============================================================================
+# CONFIGURACIÓN INICIAL DE LA INTERFAZ DE USUARIO
+# ============================================================================
+
 st.set_page_config(layout="wide", page_title=APP_NAME)
 
 # Cargar estilos CSS desde archivo
@@ -41,27 +69,8 @@ transcriber_model = Transcriber()
 chat_model = Model()
 opp_manager = OpportunitiesManager()
 
-# Inicializar estado de sesión
-if "processed_audios" not in st.session_state:
-    st.session_state.processed_audios = set()  # Audios ya procesados
-if "recordings" not in st.session_state:
-    st.session_state.recordings = recorder.get_recordings_from_supabase()
-if "selected_audio" not in st.session_state:
-    st.session_state.selected_audio = None
-if "upload_key_counter" not in st.session_state:
-    st.session_state.upload_key_counter = 0
-if "record_key_counter" not in st.session_state:
-    st.session_state.record_key_counter = 0
-if "keywords" not in st.session_state:
-    st.session_state.keywords = {}  # Palabras clave
-if "delete_confirmation" not in st.session_state:
-    st.session_state.delete_confirmation = {}  # Confirmacion de eliminacion
-if "transcription_cache" not in st.session_state:
-    st.session_state.transcription_cache = {}  # Caché de transcripciones
-if "chat_history_limit" not in st.session_state:
-    st.session_state.chat_history_limit = 50  # Límite máximo de mensajes en chat
-if "opp_delete_confirmation" not in st.session_state:
-    st.session_state.opp_delete_confirmation = {}  # Confirmación de eliminación de oportunidades
+# Inicializar estado de sesión de forma centralizada
+initialize_session_state(recorder)
 
 # Inicializar optimizaciones de performance
 init_optimization_state()
@@ -140,7 +149,7 @@ with col2:
             if filtered_recordings:
                 st.markdown(f"**📌 {len(filtered_recordings)} resultado(s):**")
                 for recording in filtered_recordings:
-                    display_name = recording.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", "")
+                    display_name = format_recording_name(recording)
                     # Usar @st.cache_data para evitar múltiples queries (50x más rápido)
                     transcription = get_transcription_cached(recording, db_utils)
                     is_transcribed = " ✓ Transcrito" if transcription else ""
@@ -157,7 +166,7 @@ with col2:
             selected_audio = st.selectbox(
                 "Selecciona un audio para transcribir",
                 filtered_recordings,
-                format_func=lambda x: x.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", "") + (
+                format_func=lambda x: format_recording_name(x) + (
                     " ✓ Transcrito" if get_transcription_cached(x, db_utils) else ""
                 )
             )
@@ -236,7 +245,7 @@ with col2:
             audios_to_delete = st.multiselect(
                 "Audios a eliminar:",
                 filtered_recordings,
-                format_func=lambda x: x.replace("_", " ").replace(".wav", "").replace(".mp3", "").replace(".m4a", "").replace(".webm", "").replace(".ogg", "").replace(".flac", "")
+                format_func=lambda x: format_recording_name(x)
             )
             
             if audios_to_delete:

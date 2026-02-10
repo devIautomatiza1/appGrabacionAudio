@@ -1,9 +1,10 @@
-"""database.py - Acceso a BD (290 líneas → 145 refactorizado)"""
+"""database.py - Acceso a BD con retry y manejo de errores mejorado"""
 import streamlit as st
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Callable
 import sys
+import time
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from logger import get_logger
@@ -15,11 +16,59 @@ try:
     from supabase import create_client, Client
 except ImportError:
     create_client = None
-    logger.warning("⚠️ Supabase no instalado")
+    logger.warning("⚠️  Supabase no instalado")
+
+# ============================================================================
+# CONFIGURACIÓN
+# ============================================================================
+MAX_RETRIES = 3
+RETRY_DELAY = 1  # segundos
+
+# ============================================================================
+# UTILIDADES
+# ============================================================================
+
+def retry_operation(
+    func: Callable,
+    *args,
+    retries: int = MAX_RETRIES,
+    delay: float = RETRY_DELAY,
+    **kwargs
+) -> Any:
+    """Reintenta una operación BD con backoff exponencial
+    
+    Args:
+        func: Función a ejecutar
+        retries: Número máximo de reintentos
+        delay: Tiempo inicial entre reintentos (se duplica cada intento)
+        *args, **kwargs: Argumentos para la función
+        
+    Returns:
+        Resultado de la función o None si falla
+    """
+    last_exception = None
+    
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            last_exception = e
+            if attempt < retries - 1:
+                wait_time = delay * (2 ** attempt)
+                logger.warning(f"Intento {attempt + 1}/{retries} falló. Reintentando en {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                logger.error(f"Operación falló después de {retries} intentos: {type(e).__name__}")
+    
+    return None
+
+# ============================================================================
+# CONEXIÓN A SUPABASE
+# ============================================================================
 
 @st.cache_resource
 def init_supabase() -> Optional[Client]:
-    """Inicializa cliente de Supabase"""
+    """Inicializa cliente de Supabase con manejo de errores"""
     try:
         url = st.secrets.get("SUPABASE_URL", "").strip()
         key = st.secrets.get("SUPABASE_KEY", "").strip()
@@ -32,6 +81,7 @@ def init_supabase() -> Optional[Client]:
     except Exception as e:
         logger.error(f"❌ Init Supabase: {e}")
         return None
+
 
 @db_operation
 def upload_audio_to_storage(db, filename: str, filepath: str) -> bool:
