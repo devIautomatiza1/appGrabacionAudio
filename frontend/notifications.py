@@ -57,7 +57,7 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
         @keyframes toastAnimation {{
             0% {{
                 opacity: 0;
-                transform: translateX(-400px);
+                transform: translateX(400px);
             }}
             15% {{
                 opacity: 1;
@@ -69,7 +69,7 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
             }}
             100% {{
                 opacity: 0;
-                transform: translateX(-400px);
+                transform: translateX(400px);
                 visibility: hidden;
             }}
         }}
@@ -77,12 +77,12 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
         .toast {{
             position: fixed;
             top: 100px;
-            left: 20px;
+            right: 20px;
             background: rgba(31, 41, 55, 0.95);
             color: {text};
             padding: 12px 16px;
             border-radius: 10px;
-            border-left: 3px solid {text};
+            border-right: 3px solid {text};
             font-weight: 600;
             font-size: 13px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 1px 1px 0 rgba(255, 255, 255, 0.1);
