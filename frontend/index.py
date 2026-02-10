@@ -498,58 +498,58 @@ if st.session_state.get("chat_enabled", False):
             is_expanded = st.session_state.get(f"expander_{original_idx}", False)
 
             with st.expander(expander_title, expanded=is_expanded):
-                col_opp1, col_opp2 = st.columns([2, 1])
-                
-                with col_opp1:
-                    st.markdown("**Contexto encontrado en el audio:**")
+                # Usar un formulario para evitar recargas al cambiar los valores
+                with st.form(key=f"form_{original_idx}"):
+                    col_opp1, col_opp2 = st.columns([2, 1])
                     
-                    # Usar markdown para resaltar la palabra clave
-                    highlighted_context = opp['full_context'].replace(
-                        opp['keyword'],
-                        f"**{opp['keyword']}**"
-                    )
-                    st.markdown(f"> {highlighted_context}")
+                    with col_opp1:
+                        st.markdown("**Contexto encontrado en el audio:**")
+                        
+                        # Usar markdown para resaltar la palabra clave
+                        highlighted_context = opp['full_context'].replace(
+                            opp['keyword'],
+                            f"**{opp['keyword']}**"
+                        )
+                        st.markdown(f"> {highlighted_context}")
 
-                    new_notes = st.text_area(
-                        "Notas y resumen:",
-                        value=opp.get('notes', ''),
-                        placeholder="Escribe el resumen de esta oportunidad de negocio...",
-                        height=100,
-                        key=f"notes_{original_idx}"
-                    )
-                
-                with col_opp2:
-                    st.markdown("**Estado:**")
-                    status_options = {"Nuevo": "new", "En progreso": "in_progress", "Cerrado": "closed", "Ganado": "won"}
-                    status_display_names = list(status_options.keys())
-                    current_status = opp.get('status', 'new')
-                    current_status_label = [k for k, v in status_options.items() if v == current_status][0]
-                    selected_status_label = st.selectbox(
-                        "Cambiar estado",
-                        status_display_names,
-                        index=status_display_names.index(current_status_label),
-                        key=f"status_{original_idx}",
-                        label_visibility="collapsed"
-                    )
-                    new_status = status_options[selected_status_label]
+                        new_notes = st.text_area(
+                            "Notas y resumen:",
+                            value=opp.get('notes', ''),
+                            placeholder="Escribe el resumen de esta oportunidad de negocio...",
+                            height=100
+                        )
                     
-                    st.markdown("**Prioridad:**")
-                    priority_options = {"Baja": "Low", "Media": "Medium", "Alta": "High"}
-                    priority_display_names = list(priority_options.keys())
-                    current_priority = opp.get('priority', 'Medium')
-                    current_priority_label = [k for k, v in priority_options.items() if v == current_priority][0]
-                    selected_priority_label = st.selectbox(
-                        "Cambiar prioridad",
-                        priority_display_names,
-                        index=priority_display_names.index(current_priority_label),
-                        key=f"priority_{original_idx}",
-                        label_visibility="collapsed"
-                    )
-                    new_priority = priority_options[selected_priority_label]
+                    with col_opp2:
+                        st.markdown("**Estado:**")
+                        status_options = {"Nuevo": "new", "En progreso": "in_progress", "Cerrado": "closed", "Ganado": "won"}
+                        status_display_names = list(status_options.keys())
+                        current_status = opp.get('status', 'new')
+                        current_status_label = [k for k, v in status_options.items() if v == current_status][0]
+                        selected_status_label = st.selectbox(
+                            "Cambiar estado",
+                            status_display_names,
+                            index=status_display_names.index(current_status_label),
+                            label_visibility="collapsed"
+                        )
+                        new_status = status_options[selected_status_label]
+                        
+                        st.markdown("**Prioridad:**")
+                        priority_options = {"Baja": "Low", "Media": "Medium", "Alta": "High"}
+                        priority_display_names = list(priority_options.keys())
+                        current_priority = opp.get('priority', 'Medium')
+                        current_priority_label = [k for k, v in priority_options.items() if v == current_priority][0]
+                        selected_priority_label = st.selectbox(
+                            "Cambiar prioridad",
+                            priority_display_names,
+                            index=priority_display_names.index(current_priority_label),
+                            label_visibility="collapsed"
+                        )
+                        new_priority = priority_options[selected_priority_label]
 
-                col_save, col_delete = st.columns(2)
-                with col_save:
-                    if st.button("Guardar cambios", key=f"save_{original_idx}", use_container_width=True):
+                    # Botón de guardar dentro del formulario
+                    submitted = st.form_submit_button("💾 Guardar cambios", use_container_width=True, type="primary")
+                    
+                    if submitted:
                         updates = {
                             "notes": new_notes,
                             "status": new_status,
@@ -560,26 +560,27 @@ if st.session_state.get("chat_enabled", False):
                             show_success_expanded("✓ Cambios guardados")
                             st.rerun()
                         else:
-                            st.toast("⚠️ Error al guardar")
+                            show_error_expanded("⚠️ Error al guardar")
                 
-                with col_delete:
-                    if st.button("Eliminar", key=f"delete_{original_idx}", use_container_width=True):
-                        st.session_state.opp_delete_confirmation[original_idx] = True
-                    
-                    if st.session_state.opp_delete_confirmation.get(original_idx):
-                        st.warning(f"⚠️ ¿Eliminar '{opp['keyword']}'?")
-                        col_yes, col_no = st.columns(2)
-                        with col_yes:
-                            if st.button("✓ Sí, eliminar", key=f"opp_confirm_yes_{original_idx}", use_container_width=True):
-                                if opp_manager.delete_opportunity(opp['id']):
-                                    delete_opportunity_local(original_idx)
-                                    st.session_state.opp_delete_confirmation.pop(original_idx, None)
-                                    show_success_expanded("✓ Oportunidad eliminada")
-                                    st.rerun()
-                        with col_no:
-                            if st.button("✗ Cancelar", key=f"opp_confirm_no_{original_idx}", use_container_width=True):
+                # Botón de eliminar FUERA del formulario
+                if st.button("🗑️ Eliminar ticket", key=f"delete_{original_idx}", use_container_width=True, type="secondary"):
+                    st.session_state.opp_delete_confirmation[original_idx] = True
+                    st.rerun()
+                
+                if st.session_state.opp_delete_confirmation.get(original_idx):
+                    st.warning(f"⚠️ ¿Eliminar '{opp['keyword']}'?")
+                    col_yes, col_no = st.columns(2)
+                    with col_yes:
+                        if st.button("✓ Sí, eliminar", key=f"opp_confirm_yes_{original_idx}", use_container_width=True):
+                            if opp_manager.delete_opportunity(opp['id']):
+                                delete_opportunity_local(original_idx)
                                 st.session_state.opp_delete_confirmation.pop(original_idx, None)
+                                show_success_expanded("✓ Oportunidad eliminada")
                                 st.rerun()
+                    with col_no:
+                        if st.button("✗ Cancelar", key=f"opp_confirm_no_{original_idx}", use_container_width=True):
+                            st.session_state.opp_delete_confirmation.pop(original_idx, None)
+                            st.rerun()
 
         # Controles de paginación de tickets
         if total_pages > 1:
