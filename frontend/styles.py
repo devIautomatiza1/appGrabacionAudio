@@ -773,6 +773,15 @@ def get_styles():
         border-color: var(--cyber-purple);
     }
     
+    /* Ocultar el indicador azul debajo de las pestañas */
+    .stTabs [data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+    
+    .stTabs [data-baseweb="tab-border"] {
+        display: none !important;
+    }
+    
     /* ============================================================
        EFECTOS DE FONDO ANIMADOS
        ============================================================ */
