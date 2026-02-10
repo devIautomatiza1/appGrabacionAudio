@@ -17,6 +17,7 @@ logger = get_logger(__name__)
 # Importar de frontend (misma carpeta)
 from AudioRecorder import AudioRecorder
 import styles
+import components
 from notifications import (
     show_success, show_error, show_warning, show_info,
     show_success_expanded, show_error_expanded, show_info_expanded, show_warning_expanded,
@@ -81,6 +82,9 @@ st.set_page_config(layout="wide", page_title=APP_NAME)
 # Cargar estilos CSS desde archivo
 st.markdown(styles.get_styles(), unsafe_allow_html=True)
 
+# Renderizar efectos de fondo animados
+components.render_background_effects()
+
 # Inicializar objetos
 recorder = AudioRecorder()
 transcriber_model = Transcriber()
@@ -93,17 +97,28 @@ initialize_session_state(recorder)
 # Inicializar optimizaciones de performance
 init_optimization_state()
 
-st.title(APP_NAME)
+# Renderizar header personalizado
+components.render_header()
 
-# Crear dos columnas principales para la carga
-col1, col2 = st.columns([1, 1])
+# Crear dos columnas principales (4/8 split como en el diseño)
+col_left, col_right = st.columns([4, 8])
 
-with col1:
-    # GRABADORA DE AUDIO EN VIVO (nativa de Streamlit)
-    st.markdown('<h3 style="color: white;">Grabadora en vivo</h3>', unsafe_allow_html=True)
-    st.caption("Graba directamente desde tu micrófono (sin interrupciones)")
+# ============================================================================
+# PANEL IZQUIERDO - Recording & Audio Library
+# ============================================================================
+with col_left:
+    # ===== RECORDING PANEL =====
+    st.markdown('''
+    <div class="glass-card">
+        <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <span style="font-size: 20px;">🎤</span>
+            Live Recorder
+        </h3>
+    ''', unsafe_allow_html=True)
     
-    audio_data = st.audio_input("Presiona el botón para grabar:", key=f"audio_recorder_{st.session_state.record_key_counter}")
+    st.caption("Graba directamente desde tu micrófono")
+    
+    audio_data = st.audio_input("", key=f"audio_recorder_{st.session_state.record_key_counter}", label_visibility="collapsed")
     
     # Procesar audio grabado SOLO UNA VEZ por hash
     if audio_data is not None:
@@ -118,12 +133,22 @@ with col1:
                 # Reset el widget para que no se procese nuevamente
                 st.session_state.record_key_counter += 1
     
-    # Opción de subir archivo
-    st.markdown('<h3 style="color: white;">Sube un archivo de audio</h3>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # ===== UPLOAD PANEL =====
+    st.markdown('''
+    <div class="glass-card" style="margin-top: 16px;">
+        <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <span style="font-size: 20px;">📤</span>
+            Upload Audio
+        </h3>
+    ''', unsafe_allow_html=True)
+    
     uploaded_file = st.file_uploader(
         "Selecciona un archivo de audio",
         type=list(AUDIO_EXTENSIONS),
-        key=f"audio_uploader_{st.session_state.upload_key_counter}"
+        key=f"audio_uploader_{st.session_state.upload_key_counter}",
+        label_visibility="collapsed"
     )
     
     if uploaded_file is not None:
@@ -136,44 +161,90 @@ with col1:
             if success:
                 # Reset el widget para que no se procese nuevamente
                 st.session_state.upload_key_counter += 1
-
-with col2:
-    st.markdown('<h3 style="color: white;">Audios Guardados</h3>', unsafe_allow_html=True)
     
-    # Refresh de la lista de audios desde Supabase cada vez que se renderiza (para sincronizar)
+    st.caption("Formatos soportados: MP3, WAV, M4A")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # ===== AUDIO LIBRARY =====
+    st.markdown('''
+    <div class="glass-card" style="margin-top: 16px;">
+    ''', unsafe_allow_html=True)
+    
+    # Refresh de la lista de audios desde Supabase
     recordings = recorder.get_recordings_from_supabase()
     st.session_state.recordings = recordings
     
+    # Renderizar título con contador
+    components.render_section_title("Saved Recordings", "🔊", len(recordings))
+    
     if recordings:
-        show_info_expanded(f"Total: {len(recordings)} audio(s)")
+        # Búsqueda
+        search_query = components.render_search_box("Search recordings...", "audio_search")
         
-        # BÚSQUEDA Y FILTRO DE AUDIOS EN TIEMPO REAL
-        search_query = st.text_input(
-            "🔍 Buscar audio:",
-            placeholder="Nombre del archivo...",
-            key="audio_search"  # Se limpia automáticamente cuando el selectbox cambia
-        )
-        
-        # Filtrar audios EN TIEMPO REAL mientras escribe
+        # Filtrar audios
         if search_query.strip():
-            # Escapar caracteres especiales para evitar problemas con regex
             search_safe = re.escape(search_query.strip())
             filtered_recordings = [
                 r for r in recordings 
                 if search_safe.lower() in r.lower()
             ]
+        else:
+            filtered_recordings = recordings
+        
+        # Mostrar resultados o estado vacío
+        if filtered_recordings:
+            st.markdown(f'''
+            <div style="max-height: 400px; overflow-y: auto; margin-top: 12px;">
+            ''', unsafe_allow_html=True)
             
-            # Mostrar resultados en tiempo real
-            if filtered_recordings:
-                st.markdown(f"**📌 {len(filtered_recordings)} resultado(s):**")
-                for recording in filtered_recordings:
-                    display_name = format_recording_name(recording)
-                    # Usar verificación DIRECTA para audios nuevos
-                    is_transcribed = is_audio_transcribed(recording, db_utils)
-                    transcribed_badge = " ✓ Transcrito" if is_transcribed else ""
-                    st.caption(f"🎵 {display_name}{transcribed_badge}")
-            else:
-                show_warning_expanded(f"No se encontraron audios con '{search_query}'")
+            for recording in filtered_recordings[:10]:  # Mostrar solo 10 primeros
+                display_name = format_recording_name(recording)
+                is_transcribed = is_audio_transcribed(recording, db_utils)
+                transcribed_badge = components.render_badge("✓ Transcribed", "transcribed") if is_transcribed else ""
+                
+                st.markdown(f'''
+                <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
+                            <div style="font-size: 11px; color: var(--muted-foreground);">Click para seleccionar</div>
+                        </div>
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            components.render_empty_state("🔍", f"No recordings found for '{search_query}'")
+    else:
+        components.render_empty_state("🔊", "No recordings yet. Start by recording or uploading audio!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ============================================================================
+# PANEL DERECHO - Opportunities Board & Transcription
+# ============================================================================
+with col_right:
+    # ===== TRANSCRIPTION & OPPORTUNITIES SECTION =====
+    st.markdown('''
+    <div class="glass-card">
+    ''', unsafe_allow_html=True)
+    
+    components.render_section_title("Transcription & Opportunities", "📝")
+    
+    # Refresh de la lista de audios
+    recordings = recorder.get_recordings_from_supabase()
+    st.session_state.recordings = recordings
+    
+    if recordings:
+        # Filtrar audios (reutilizar la búsqueda del panel izquierdo si existe)
+        search_query = st.session_state.get("audio_search", "")
+        if search_query and search_query.strip():
+            search_safe = re.escape(search_query.strip())
+            filtered_recordings = [
+                r for r in recordings 
+                if search_safe.lower() in r.lower()
+            ]
         else:
             filtered_recordings = recordings
         
@@ -187,12 +258,11 @@ with col2:
                 format_func=lambda x: format_recording_name(x) + (
                     " ✓ Transcrito" if is_audio_transcribed(x, db_utils) else ""
                 ),
-                key=f"selectbox_audio_{len(filtered_recordings)}"  # Key dinámico para reinicializar al cambiar lista
+                key=f"selectbox_audio_{len(filtered_recordings)}"
             )
             
             if selected_audio:
                 # Cargar transcripción existente automáticamente si existe
-                # Usar always_load_transcription para forzar carga si viene de una eliminación
                 if selected_audio != st.session_state.get("loaded_audio"):
                     existing_transcription = db_utils.get_transcription_by_filename(selected_audio)
                     if existing_transcription:
@@ -203,7 +273,6 @@ with col2:
                         st.session_state.keywords = {}
                         add_debug_event(f"Transcripción cargada para '{selected_audio}'", "success")
                     else:
-                        # Si no existe transcripción, marcar que se cargó este audio (pero sin transcripción)
                         st.session_state.selected_audio = selected_audio
                         st.session_state.loaded_audio = selected_audio
                         st.session_state.chat_enabled = False
@@ -213,14 +282,14 @@ with col2:
                 col_play, col_transcribe, col_delete = st.columns([1, 1, 1])
                 
                 with col_play:
-                    if st.button("Reproducir"):
+                    if st.button("▶️ Reproducir", use_container_width=True):
                         audio_path = recorder.get_recording_path(selected_audio)
                         extension = selected_audio.split('.')[-1]
                         with open(audio_path, "rb") as f:
                             st.audio(f.read(), format=f"audio/{extension}")
                 
                 with col_transcribe:
-                    if st.button("Transcribir"):
+                    if st.button("📝 Transcribir", use_container_width=True):
                         with st.spinner("Transcribiendo..."):
                             try:
                                 audio_path = recorder.get_recording_path(selected_audio)
@@ -231,46 +300,42 @@ with col2:
                                 st.session_state.chat_enabled = True
                                 st.session_state.keywords = {}
                                 
-                                # Guardar la transcripción en Supabase
                                 transcription_id = db_utils.save_transcription(
                                     recording_filename=selected_audio,
                                     content=transcription.text,
                                     language="es"
                                 )
                                 
+                                show_success("Transcripción completada")
                                 add_debug_event(f"Transcripción completada para '{selected_audio}' (ID: {transcription_id})", "success")
                             except Exception as e:
-                                show_error_expanded(f"Error al transcribir: {e}")
+                                show_error(f"Error al transcribir: {e}")
                 
                 with col_delete:
-                    if st.button("Eliminar", key=f"delete_{selected_audio}"):
-                        # Pedir confirmación
+                    if st.button("🗑️ Eliminar", use_container_width=True):
                         st.session_state.delete_confirmation[selected_audio] = True
                     
-                    # Mostrar confirmación si está pendiente
                     if st.session_state.delete_confirmation.get(selected_audio):
                         st.warning(f"⚠️ ¿Eliminar '{selected_audio}'?")
                         col_yes, col_no = st.columns(2)
                         with col_yes:
-                            if st.button("✓ Sí, eliminar", key=f"confirm_yes_{selected_audio}"):
+                            if st.button("✓ Sí", key=f"confirm_yes_{selected_audio}"):
                                 if delete_audio(selected_audio, recorder, db_utils):
-                                    # Actualizar localmente SIN st.rerun() (100ms en lugar de 2s)
                                     delete_recording_local(selected_audio)
                                     st.session_state.chat_enabled = False
                                     st.session_state.loaded_audio = None
                                     st.session_state.selected_audio = None
                                     st.session_state.delete_confirmation.pop(selected_audio, None)
-                                    show_success_expanded(f"✓ '{selected_audio}' eliminado")
+                                    show_success(f"'{selected_audio}' eliminado")
                                     add_debug_event(f"Audio '{selected_audio}' eliminado", "success")
-                                    st.rerun()  # ACTUALIZAR UI inmediatamente
+                                    st.rerun()
                         with col_no:
-                            if st.button("✗ Cancelar", key=f"confirm_no_{selected_audio}"):
+                            if st.button("✗ No", key=f"confirm_no_{selected_audio}"):
                                 st.session_state.delete_confirmation.pop(selected_audio, None)
-                                st.rerun()  # ACTUALIZAR UI inmediatamente
+                                st.rerun()
         
         with tab2:
             st.subheader("Eliminar múltiples audios")
-            st.write("Selecciona uno o varios audios para eliminarlos")
             
             audios_to_delete = st.multiselect(
                 "Audios a eliminar:",
@@ -279,36 +344,31 @@ with col2:
             )
             
             if audios_to_delete:
-                show_warning_expanded(f"Vas a eliminar {len(audios_to_delete)} audio(s)")
+                show_warning(f"Vas a eliminar {len(audios_to_delete)} audio(s)")
                 
-                st.write("**Audios seleccionados:**")
                 for audio in audios_to_delete:
                     st.write(f"  • {audio}")
                 
                 col_confirm, col_cancel = st.columns(2)
                 with col_confirm:
-                    if st.button("Eliminar seleccionados", type="primary", use_container_width=True, key="delete_batch"):
-                        with st.spinner(f"⏳ Eliminando {len(audios_to_delete)} audio(s)..."):
+                    if st.button("Eliminar seleccionados", type="primary", use_container_width=True):
+                        with st.spinner(f"Eliminando {len(audios_to_delete)} audio(s)..."):
                             deleted_count = 0
-                            
-                            # Eliminar todos localmente primero para respuesta inmediata
                             for audio in audios_to_delete:
                                 if delete_audio(audio, recorder, db_utils):
-                                    delete_recording_local(audio)  # Actualizar sesión localmente
+                                    delete_recording_local(audio)
                                     deleted_count += 1
                             
-                            # Limpiar estado de sesión
                             st.session_state.chat_enabled = False
                             st.session_state.selected_audio = None
                             
                             if deleted_count > 0:
-                                show_success_expanded(f"✓ {deleted_count} audio(s) eliminado(s) - Actualización instantánea")
-                                st.rerun()  # ACTUALIZAR UI inmediatamente
-                
-                with col_cancel:
-                    st.write("")
+                                show_success(f"{deleted_count} audio(s) eliminado(s)")
+                                st.rerun()
     else:
-        show_info_expanded("No hay audios guardados. Sube un archivo.")
+        components.render_empty_state("📝", "No hay audios. Comienza grabando o subiendo audio!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("")
 st.markdown("")
