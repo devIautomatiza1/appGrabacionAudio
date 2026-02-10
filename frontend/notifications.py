@@ -117,7 +117,56 @@ show_error_expanded = show_error
 show_warning_expanded = show_warning
 show_info_expanded = show_info
 
-show_success_debug = show_success
-show_error_debug = show_error
-show_info_debug = show_info
+
+def show_success_debug(message: str) -> None:
+    """Mostrar notificación de éxito permanente (debug)"""
+    _show_debug_notification(message, "success")
+
+
+def show_error_debug(message: str) -> None:
+    """Mostrar notificación de error permanente (debug)"""
+    _show_debug_notification(message, "error")
+
+
+def show_info_debug(message: str) -> None:
+    """Mostrar notificación de información permanente (debug)"""
+    _show_debug_notification(message, "info")
+
+
+def _show_debug_notification(message: str, notification_type: str) -> None:
+    """
+    Mostrar notificación permanente en línea sin desvanecimiento (debug).
+    
+    Args:
+        message: Texto a mostrar
+        notification_type: Tipo ('success', 'error', 'info')
+    """
+    config = TOAST_COLORS.get(notification_type, TOAST_COLORS["info"])
+    icon = config["icon"]
+    text = config["text"]
+    
+    # Mostrar en línea sin animación de desvanecimiento
+    st.markdown(f"""
+    <div style="
+        background: rgba(31, 41, 55, 0.95);
+        color: {text};
+        padding: 12px 16px;
+        border-radius: 10px;
+        border-left: 3px solid {text};
+        font-weight: 600;
+        font-size: 13px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+        max-width: 100%;
+        word-wrap: break-word;
+        font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    ">
+        <span style="font-size: 16px; flex-shrink: 0;">{icon}</span> 
+        <span>{message}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
