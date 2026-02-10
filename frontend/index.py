@@ -17,7 +17,11 @@ logger = get_logger(__name__)
 # Importar de frontend (misma carpeta)
 from AudioRecorder import AudioRecorder
 import styles
-from notifications import show_success, show_error, show_warning, show_info, show_success_expanded, show_error_expanded, show_info_expanded, show_warning_expanded, show_success_debug, show_error_debug, show_info_debug
+from notifications import (
+    show_success, show_error, show_warning, show_info,
+    show_success_expanded, show_error_expanded, show_info_expanded, show_warning_expanded,
+    show_success_debug, show_error_debug, show_info_debug
+)
 from utils import process_audio_file, delete_audio
 from performance import get_transcription_cached, update_opportunity_local, delete_opportunity_local, delete_keyword_local, delete_recording_local, init_optimization_state
 from helpers import format_recording_name

@@ -89,74 +89,36 @@ def _show_notification_expanded(message: str, notification_type: str) -> None:
     """, unsafe_allow_html=True)
 
 
-# API pública - Notificaciones compactas
-def show_success(message: str) -> None:
-    """Muestra un icono de éxito con tooltip con el mensaje"""
-    _show_notification(message, "success")
+def _create_notification_function(notification_type: str, style_variant: str):
+    """Factory que crea funciones de notificación dinámicamente
+    
+    Args:
+        notification_type: 'success', 'error', 'warning', 'info'
+        style_variant: 'compact', 'expanded', 'debug'
+    """
+    def notification_func(message: str) -> None:
+        if style_variant == 'compact':
+            _show_notification(message, notification_type)
+        elif style_variant == 'expanded':
+            _show_notification_expanded(message, notification_type)
+        elif style_variant == 'debug':
+            icon = NOTIFICATION_STYLES.get(notification_type, {}).get("icon", "•")
+            st.markdown(f'<div class="notification-expanded notification-expanded-{notification_type}">{icon} {message}</div>', unsafe_allow_html=True)
+    
+    return notification_func
 
+# API pública - Generar funciones automáticamente
+show_success = _create_notification_function("success", "compact")
+show_error = _create_notification_function("error", "compact")
+show_warning = _create_notification_function("warning", "compact")
+show_info = _create_notification_function("info", "compact")
 
-def show_error(message: str) -> None:
-    """Muestra un icono de error con tooltip con el mensaje"""
-    _show_notification(message, "error")
+show_success_expanded = _create_notification_function("success", "expanded")
+show_error_expanded = _create_notification_function("error", "expanded")
+show_info_expanded = _create_notification_function("info", "expanded")
+show_warning_expanded = _create_notification_function("warning", "expanded")
 
+show_success_debug = _create_notification_function("success", "debug")
+show_error_debug = _create_notification_function("error", "debug")
+show_info_debug = _create_notification_function("info", "debug")
 
-def show_warning(message: str) -> None:
-    """Muestra un icono de advertencia con tooltip con el mensaje"""
-    _show_notification(message, "warning")
-
-
-def show_info(message: str) -> None:
-    """Muestra un icono de información con tooltip con el mensaje"""
-    _show_notification(message, "info")
-
-
-# API pública - Notificaciones expandidas (para debug)
-def show_success_expanded(message: str) -> None:
-    """Muestra un mensaje de éxito visible completo (para debug)"""
-    _show_notification_expanded(message, "success")
-
-
-def show_error_expanded(message: str) -> None:
-    """Muestra un mensaje de error visible completo (para debug)"""
-    _show_notification_expanded(message, "error")
-
-
-def show_info_expanded(message: str) -> None:
-    """Muestra un mensaje de información visible completo (para debug)"""
-    _show_notification_expanded(message, "info")
-
-
-def show_warning_expanded(message: str) -> None:
-    """Muestra un mensaje de advertencia en toast arriba a la derecha"""
-    _show_notification_expanded(message, "warning")
-
-
-# Funciones de DEBUG - Para cuadros expandidos abajo
-def show_success_debug(message: str) -> None:
-    """Muestra un mensaje de éxito en cuadro expandido (para debug)"""
-    icon = NOTIFICATION_STYLES.get("success", {}).get("icon", "•")
-    st.markdown(f"""
-    <div class="notification-expanded notification-expanded-success">
-        {icon} {message}
-    </div>
-    """, unsafe_allow_html=True)
-
-
-def show_error_debug(message: str) -> None:
-    """Muestra un mensaje de error en cuadro expandido (para debug)"""
-    icon = NOTIFICATION_STYLES.get("error", {}).get("icon", "•")
-    st.markdown(f"""
-    <div class="notification-expanded notification-expanded-error">
-        {icon} {message}
-    </div>
-    """, unsafe_allow_html=True)
-
-
-def show_info_debug(message: str) -> None:
-    """Muestra un mensaje de información en cuadro expandido (para debug)"""
-    icon = NOTIFICATION_STYLES.get("info", {}).get("icon", "•")
-    st.markdown(f"""
-    <div class="notification-expanded notification-expanded-info">
-        {icon} {message}
-    </div>
-    """, unsafe_allow_html=True)

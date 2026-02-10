@@ -66,6 +66,10 @@ def retry_operation(
 # CONEXIÓN A SUPABASE
 # ============================================================================
 
+# ============================================================================
+# CONEXIÓN A SUPABASE
+# ============================================================================
+
 @st.cache_resource
 def init_supabase() -> Optional[Client]:
     """Inicializa cliente de Supabase con manejo de errores"""
@@ -81,6 +85,58 @@ def init_supabase() -> Optional[Client]:
     except Exception as e:
         logger.error(f"❌ Init Supabase: {e}")
         return None
+
+# ============================================================================
+# OPERACIONES DE TABLA GENÉRICAS
+# ============================================================================
+
+def _execute_table_operation(
+    db,
+    table: str,
+    method: str,
+    filters: Optional[Dict[str, Any]] = None,
+    data: Optional[Dict[str, Any]] = None,
+    order_by: Optional[str] = None,
+    desc: bool = False
+) -> Optional[List[Dict]]:
+    """Ejecuta una operación genérica en tabla con manejo de errores
+    
+    Args:
+        db: Cliente Supabase
+        table: Nombre de tabla
+        method: 'select', 'insert', 'update', 'delete'
+        filters: Dict de filtros {column: value}
+        data: Datos para insert/update
+        order_by: Columna para ordenar
+        desc: Si es descendente
+    """
+    try:
+        query = db.table(table)
+        
+        if method == "select":
+            query = query.select("*")
+        elif method == "insert":
+            query = query.insert(data or {})
+        elif method == "update":
+            query = query.update(data or {})
+        elif method == "delete":
+            query = query.delete()
+        
+        # Aplicar filtros
+        if filters:
+            for col, val in filters.items():
+                query = query.eq(col, val)
+        
+        # Aplicar ordering
+        if order_by:
+            query = query.order(order_by, desc=desc)
+        
+        result = query.execute()
+        return result.data if result and result.data else []
+    except Exception as e:
+        logger.error(f"DB {method} {table}: {type(e).__name__}")
+        return [] if method == "select" else None
+
 
 
 @db_operation
@@ -145,46 +201,29 @@ def save_recording_to_db(db, filename: str, filepath: str, transcription: Option
 @db_operation
 def get_all_recordings(db) -> List[Dict]:
     """Obtiene todas las grabaciones"""
-    try:
-        result = db.table("recordings").select("*").execute()
-        return result.data if result.data else []
-    except:
-        return []
+    return _execute_table_operation(db, "recordings", "select")
 
 @db_operation
 def update_transcription(db, recording_id: str, transcription: str) -> bool:
     """Actualiza transcripción"""
-    try:
-        db.table("recordings").update({
-            "transcription": transcription,
-            "updated_at": datetime.now().isoformat()
-        }).eq("id", recording_id).execute()
-        return True
-    except:
-        return False
+    return bool(_execute_table_operation(
+        db, "recordings", "update",
+        filters={"id": recording_id},
+        data={"transcription": transcription, "updated_at": datetime.now().isoformat()}
+    ))
 
 @db_operation
 def save_opportunity(db, recording_id: str, title: str, description: str) -> bool:
     """Guarda oportunidad"""
-    try:
-        db.table("opportunities").insert({
-            "recording_id": recording_id,
-            "title": title,
-            "description": description,
-            "created_at": datetime.now().isoformat()
-        }).execute()
-        return True
-    except:
-        return False
+    return bool(_execute_table_operation(
+        db, "opportunities", "insert",
+        data={"recording_id": recording_id, "title": title, "description": description, "created_at": datetime.now().isoformat()}
+    ))
 
 @db_operation
 def get_opportunities_by_recording(db, recording_id: str) -> List[Dict]:
     """Obtiene oportunidades"""
-    try:
-        result = db.table("opportunities").select("*").eq("recording_id", recording_id).execute()
-        return result.data if result.data else []
-    except:
-        return []
+    return _execute_table_operation(db, "opportunities", "select", filters={"recording_id": recording_id})
 
 @db_operation
 def delete_recording_from_db(db, recording_id: int) -> bool:
