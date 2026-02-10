@@ -7,10 +7,10 @@ import streamlit as st
 
 # Configuración de colores por tipo
 TOAST_COLORS = {
-    "success": {"border": "#10b981", "icon": "✓"},
-    "error": {"border": "#ef4444", "icon": "✕"},
-    "warning": {"border": "#f59e0b", "icon": "⚠"},
-    "info": {"border": "#2563eb", "icon": "ℹ"},
+    "success": {"bg": "#1f2937", "text": "#10b981", "icon": "✓"},    # Fondo gris oscuro, texto verde
+    "error": {"bg": "#1f2937", "text": "#ef4444", "icon": "✕"},       # Fondo gris oscuro, texto rojo
+    "warning": {"bg": "#1f2937", "text": "#f59e0b", "icon": "⚠"},     # Fondo gris oscuro, texto amarillo
+    "info": {"bg": "#1f2937", "text": "#3b82f6", "icon": "ℹ"},        # Fondo gris oscuro, texto azul
 }
 
 
@@ -45,7 +45,7 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
     """
     config = TOAST_COLORS.get(notification_type, TOAST_COLORS["info"])
     icon = config["icon"]
-    accent = config["border"]
+    text = config["text"]
     
     # Generar ID único para el toast
     import uuid
@@ -74,33 +74,34 @@ def _show_toast(message: str, notification_type: str, duration: int = 3) -> None
             }}
         }}
         
-        .toast {
+        .toast {{
             position: fixed;
-            top: 32px;
-            right: 32px;
-            background: var(--surface, #ffffff);
-            color: var(--text-primary, #0f172a);
-            padding: 14px 18px;
-            border-radius: 16px;
-            border: 1px solid var(--border, #e4e7f4);
-            border-left: 4px solid {accent};
+            top: 100px;
+            right: 20px;
+            background: rgba(31, 41, 55, 0.95);
+            color: {text};
+            padding: 12px 16px;
+            border-radius: 10px;
+            border-right: 3px solid {text};
             font-weight: 600;
             font-size: 13px;
-            box-shadow: 0 25px 60px rgba(15, 23, 42, 0.15);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             z-index: 99999;
-            max-width: 360px;
+            max-width: 350px;
             word-wrap: break-word;
-            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             animation: toastAnimation 4s ease-in-out forwards;
-        }
-
-        .toast span {
+        }}
+        
+        .toast span {{
             font-size: 16px;
             flex-shrink: 0;
-        }
+        }}
     </style>
     
     <div class="toast">
@@ -142,23 +143,23 @@ def _show_debug_notification(message: str, notification_type: str) -> None:
     """
     config = TOAST_COLORS.get(notification_type, TOAST_COLORS["info"])
     icon = config["icon"]
-    accent = config["border"]
+    text = config["text"]
     
     # Mostrar en línea sin animación de desvanecimiento
     st.markdown(f"""
     <div style="
-        background: var(--surface, #ffffff);
-        color: var(--text-primary, #0f172a);
+        background: rgba(31, 41, 55, 0.95);
+        color: {text};
         padding: 12px 16px;
-        border-radius: 14px;
-        border-left: 4px solid {accent};
+        border-radius: 10px;
+        border-left: 3px solid {text};
         font-weight: 600;
         font-size: 13px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 1px 1px 0 rgba(255, 255, 255, 0.1);
         max-width: 100%;
         word-wrap: break-word;
-        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
-        border: 1px solid var(--border, #e4e7f4);
+        font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         display: flex;
         align-items: center;
         gap: 10px;

@@ -1,5 +1,5 @@
 """
-Componentes reutilizables para la interfaz - Diseño minimalista
+Componentes reutilizables para la interfaz - Diseño Glassmorphism
 """
 import streamlit as st
 from datetime import datetime
@@ -60,46 +60,51 @@ def render_badge(text: str, badge_type: str = "default") -> str:
 
 
 def render_opportunity_card(opportunity: Dict[str, Any]) -> None:
-    """Renderiza una tarjeta de oportunidad con estética minimalista"""
+    """
+    Renderiza una tarjeta de oportunidad con el diseño completo
+    
+    Args:
+        opportunity: Diccionario con los datos de la oportunidad
+                    Debe contener: id, ticket_number, title, description,
+                    priority, status, created_at
+    """
+    # Determinar clase de prioridad
     priority_class = ""
     if opportunity.get("priority", "").lower() == "high":
         priority_class = "opportunity-card-high-priority"
-
-    priority_badge = render_badge(
-        opportunity.get("priority", "Medium"),
-        f"priority-{opportunity.get('priority', 'medium').lower()}"
-    )
-    status_badge = render_badge(
-        opportunity.get("status", "Open"),
-        f"status-{opportunity.get('status', 'open').lower().replace(' ', '')}"
-    )
-
+    
+    # Badges de prioridad y estado
+    priority_badge = render_badge(opportunity.get("priority", "Medium"), 
+                                 f"priority-{opportunity.get('priority', 'medium').lower()}")
+    status_badge = render_badge(opportunity.get("status", "Open"), 
+                               f"status-{opportunity.get('status', 'open').lower().replace(' ', '')}")
+    
+    # Formatear fecha
     created_date = opportunity.get("created_at", "")
     if isinstance(created_date, str):
         try:
             date_obj = datetime.fromisoformat(created_date.replace('Z', '+00:00'))
             formatted_date = date_obj.strftime("%d %b %Y")
-        except Exception:
+        except:
             formatted_date = created_date
     else:
         formatted_date = str(created_date)
-
+    
+    # Renderizar tarjeta
     st.markdown(f'''
     <div class="opportunity-card {priority_class}">
         <div class="opportunity-header">
-            <div>
-                <span class="ticket-number">#{opportunity.get("ticket_number", "")}</span>
-                <div class="opportunity-title">{opportunity.get("title", "Sin título")}</div>
-            </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                {priority_badge}
-                {status_badge}
-            </div>
+            <span class="ticket-number">#{opportunity.get("ticket_number", "")}</span>
+            {priority_badge}
         </div>
+        
+        <div class="opportunity-title">{opportunity.get("title", "Sin título")}</div>
+        
         <div class="opportunity-description">{opportunity.get("description", "Sin descripción")}</div>
+        
         <div class="opportunity-footer">
-            <span>Actualizado: {formatted_date}</span>
-            <span style="font-weight:600; color: var(--text-primary);">{opportunity.get("owner", "IA Assistant")}</span>
+            <div>{status_badge}</div>
+            <div style="font-size: 12px; color: var(--muted-foreground);">{formatted_date}</div>
         </div>
     </div>
     ''', unsafe_allow_html=True)
@@ -161,22 +166,20 @@ def render_recording_item(recording: Dict[str, Any], on_play=None, on_transcribe
 
 
 def render_header() -> None:
-    """Renderiza el hero principal con un mensaje claro y profesional"""
+    """Renderiza el header personalizado de la aplicación"""
     st.markdown('''
-    <div class="app-hero">
-        <div class="app-hero__content">
-            <p class="helper-text" style="text-transform: uppercase; letter-spacing: 0.2em; font-weight: 600; margin-bottom: 8px;">AI Meeting Intelligence</p>
-            <h1>Gestiona audios, transcripciones y oportunidades en un solo lugar</h1>
-            <p>Sube grabaciones, extrae contexto relevante y convierte cada conversación en acciones comerciales claras.</p>
-        </div>
-        <div class="app-hero__actions">
-            <div class="hero-pill">
-                <span>Pipeline de audio</span>
-                <strong>Procesamiento continuo</strong>
+    <div class="glass-header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">✨</div>
+                <div>
+                    <h1 style="margin: 0; font-size: 20px; font-weight: 700;">AI Meeting Intelligence</h1>
+                    <p class="subtitle">Transform conversations into opportunities</p>
+                </div>
             </div>
-            <div class="hero-pill">
-                <span>Insights IA</span>
-                <strong>Oportunidades listas</strong>
+            <div class="header-actions">
+                <button class="icon-btn" title="Settings">⚙️</button>
+                <button class="icon-btn" title="User">👤</button>
             </div>
         </div>
     </div>
@@ -184,25 +187,30 @@ def render_header() -> None:
 
 
 def render_background_effects() -> None:
-    """Renderiza acentos de fondo suaves para el dashboard"""
+    """Renderiza los efectos de fondo animados (orbes)"""
     st.markdown('''
     <div class="background-effects">
-        <div class="background-accent background-accent--one"></div>
-        <div class="background-accent background-accent--two"></div>
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
     </div>
     ''', unsafe_allow_html=True)
 
 
 def render_section_title(title: str, icon: str = "", count: Optional[int] = None) -> None:
-    """Renderiza un título de sección consistente"""
-    icon_html = f'<span class="section-title__icon">{icon}</span>' if icon else ""
-    count_html = f'<span class="section-title__count">{count}</span>' if count is not None else ""
+    """
+    Renderiza un título de sección con estilo
+    
+    Args:
+        title: Título de la sección
+        icon: Emoji o icono
+        count: Número a mostrar (opcional)
+    """
+    count_text = f'<span style="color: var(--muted-foreground); font-weight: normal;"> ({count})</span>' if count is not None else ""
     st.markdown(f'''
-    <div class="section-title">
-        {icon_html}
-        <span class="section-title__label">{title}</span>
-        {count_html}
-    </div>
+    <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+        <span style="font-size: 20px;">{icon}</span>
+        {title}{count_text}
+    </h3>
     ''', unsafe_allow_html=True)
 
 
@@ -217,9 +225,9 @@ def render_priority_indicator(priority: str) -> str:
         Tuple de (emoji, color)
     """
     indicators = {
-        "high": ("🔴", "var(--error)"),
-        "medium": ("🟡", "var(--warning)"),
-        "low": ("🟢", "var(--success)")
+        "high": ("🔴", "var(--error-red)"),
+        "medium": ("🟡", "var(--warning-orange)"),
+        "low": ("🟢", "var(--success-green)")
     }
     return indicators.get(priority.lower(), ("⚪", "var(--muted-foreground)"))
 
