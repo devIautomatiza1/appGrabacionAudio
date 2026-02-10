@@ -54,7 +54,8 @@ def initialize_session_state(recorder_obj: AudioRecorder) -> None:
         "chat_history_limit": CHAT_HISTORY_LIMIT,
         "opp_delete_confirmation": {},
         "debug_log": [],  # Registro de eventos para el DEBUG
-        "audio_page": 0  # Página actual para paginación de audios
+        "audio_page": 0,  # Página actual para paginación de audios
+        "tickets_page": 0 # Página actual para paginación de tickets
     }
     
     for key, value in session_defaults.items():
@@ -472,38 +473,53 @@ if st.session_state.get("chat_enabled", False):
     if opportunities:
         st.markdown('<h2 style="color: white;">Tickets de Oportunidades de Negocio</h2>', unsafe_allow_html=True)
         
-        for idx, opp in enumerate(opportunities):
-            # Mostrar número de ocurrencia si hay múltiples
-            occurrence_text = ""
-            if opp.get('occurrence', 1) > 1:
-                occurrence_text = f" (Ocurrencia #{opp['occurrence']})"
+        # Paginación de tickets
+        TICKETS_PER_PAGE = 5
+        total_tickets = len(opportunities)
+        total_pages = (total_tickets + TICKETS_PER_PAGE - 1) // TICKETS_PER_PAGE
+        
+        if 'tickets_page' not in st.session_state:
+            st.session_state.tickets_page = 0
             
-            with st.expander(f"{opp['keyword']} {occurrence_text} - {opp['created_at']}", expanded=False):
+        if st.session_state.tickets_page >= total_pages and total_pages > 0:
+            st.session_state.tickets_page = total_pages - 1
+        elif st.session_state.tickets_page < 0:
+            st.session_state.tickets_page = 0
+            
+        start_idx = st.session_state.tickets_page * TICKETS_PER_PAGE
+        end_idx = min(start_idx + TICKETS_PER_PAGE, total_tickets)
+        paginated_opportunities = opportunities[start_idx:end_idx]
+
+        for idx, opp in enumerate(paginated_opportunities):
+            # Usar el índice original para las keys de los widgets
+            original_idx = start_idx + idx
+            
+            expander_title = f"{opp['keyword']} - {opp['created_at']}"
+            is_expanded = st.session_state.get(f"expander_{original_idx}", False)
+
+            with st.expander(expander_title, expanded=is_expanded):
                 col_opp1, col_opp2 = st.columns([2, 1])
                 
                 with col_opp1:
-                    st.write("**Contexto encontrado en el audio:**")
-                    # Resaltar la palabra clave en azul dentro del contexto
+                    st.markdown("**Contexto encontrado en el audio:**")
+                    
+                    # Usar markdown para resaltar la palabra clave
                     highlighted_context = opp['full_context'].replace(
                         opp['keyword'],
-                        f'<span style="color: #0052CC; font-weight: 600;">{opp["keyword"]}</span>'
+                        f"**{opp['keyword']}**"
                     )
-                    st.markdown(f"""
-                    <div class="notification-container notification-info">
-                        {highlighted_context}
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
+                    st.markdown(f"> {highlighted_context}")
+
                     new_notes = st.text_area(
                         "Notas y resumen:",
                         value=opp.get('notes', ''),
                         placeholder="Escribe el resumen de esta oportunidad de negocio...",
                         height=100,
-                        key=f"notes_{idx}"
+                        key=f"notes_{original_idx}"
                     )
                 
                 with col_opp2:
-                    st.write("**Estado:**")
+                    st.markdown("**Estado:**")
                     status_options = {"Nuevo": "new", "En progreso": "in_progress", "Cerrado": "closed", "Ganado": "won"}
                     status_display_names = list(status_options.keys())
                     current_status = opp.get('status', 'new')
@@ -512,12 +528,12 @@ if st.session_state.get("chat_enabled", False):
                         "Cambiar estado",
                         status_display_names,
                         index=status_display_names.index(current_status_label),
-                        key=f"status_{idx}",
+                        key=f"status_{original_idx}",
                         label_visibility="collapsed"
                     )
                     new_status = status_options[selected_status_label]
                     
-                    st.write("**Prioridad:**")
+                    st.markdown("**Prioridad:**")
                     priority_options = {"Baja": "Low", "Media": "Medium", "Alta": "High"}
                     priority_display_names = list(priority_options.keys())
                     current_priority = opp.get('priority', 'Medium')
@@ -526,47 +542,66 @@ if st.session_state.get("chat_enabled", False):
                         "Cambiar prioridad",
                         priority_display_names,
                         index=priority_display_names.index(current_priority_label),
-                        key=f"priority_{idx}",
+                        key=f"priority_{original_idx}",
                         label_visibility="collapsed"
                     )
                     new_priority = priority_options[selected_priority_label]
-                
+
                 col_save, col_delete = st.columns(2)
                 with col_save:
-                    if st.button("Guardar cambios", key=f"save_{idx}", use_container_width=True):
+                    if st.button("Guardar cambios", key=f"save_{original_idx}", use_container_width=True):
                         updates = {
                             "notes": new_notes,
                             "status": new_status,
                             "priority": new_priority
                         }
                         if opp_manager.update_opportunity(opp['id'], updates):
-                            # Actualización local instantánea
-                            update_opportunity_local(idx, updates)
-                            show_success_expanded("✓ Cambios guardados - Actualización instantánea")
-                            st.rerun()  # ACTUALIZAR UI inmediatamente
+                            update_opportunity_local(original_idx, updates)
+                            show_success_expanded("✓ Cambios guardados")
+                            st.rerun()
                         else:
                             st.toast("⚠️ Error al guardar")
                 
                 with col_delete:
-                    if st.button("Eliminar", key=f"delete_{idx}", use_container_width=True):
-                        st.session_state.opp_delete_confirmation[idx] = True
+                    if st.button("Eliminar", key=f"delete_{original_idx}", use_container_width=True):
+                        st.session_state.opp_delete_confirmation[original_idx] = True
                     
-                    # Mostrar confirmación si está pendiente
-                    if st.session_state.opp_delete_confirmation.get(idx):
+                    if st.session_state.opp_delete_confirmation.get(original_idx):
                         st.warning(f"⚠️ ¿Eliminar '{opp['keyword']}'?")
                         col_yes, col_no = st.columns(2)
                         with col_yes:
-                            if st.button("✓ Sí, eliminar", key=f"opp_confirm_yes_{idx}", use_container_width=True):
+                            if st.button("✓ Sí, eliminar", key=f"opp_confirm_yes_{original_idx}", use_container_width=True):
                                 if opp_manager.delete_opportunity(opp['id']):
-                                    # Actualización local instantánea
-                                    delete_opportunity_local(idx)
-                                    st.session_state.opp_delete_confirmation.pop(idx, None)
-                                    show_success_expanded("✓ Oportunidad eliminada - Actualización instantánea")
-                                    st.rerun()  # ACTUALIZAR UI inmediatamente
+                                    delete_opportunity_local(original_idx)
+                                    st.session_state.opp_delete_confirmation.pop(original_idx, None)
+                                    show_success_expanded("✓ Oportunidad eliminada")
+                                    st.rerun()
                         with col_no:
-                            if st.button("✗ Cancelar", key=f"opp_confirm_no_{idx}", use_container_width=True):
-                                st.session_state.opp_delete_confirmation.pop(idx, None)
-                                st.rerun()  # ACTUALIZAR UI inmediatamente
+                            if st.button("✗ Cancelar", key=f"opp_confirm_no_{original_idx}", use_container_width=True):
+                                st.session_state.opp_delete_confirmation.pop(original_idx, None)
+                                st.rerun()
+
+        # Controles de paginación de tickets
+        if total_pages > 1:
+            st.markdown("---")
+            col_prev, col_info, col_next = st.columns([1, 2, 1])
+            
+            with col_prev:
+                if st.button("← Anterior", key="tickets_prev", disabled=(st.session_state.tickets_page == 0), use_container_width=True):
+                    st.session_state.tickets_page -= 1
+                    st.rerun()
+            
+            with col_info:
+                st.markdown(f'''
+                <div style="text-align: center; padding: 8px; color: var(--muted-foreground);">
+                    Página {st.session_state.tickets_page + 1} de {total_pages}
+                </div>
+                ''', unsafe_allow_html=True)
+            
+            with col_next:
+                if st.button("Siguiente →", key="tickets_next", disabled=(st.session_state.tickets_page >= total_pages - 1), use_container_width=True):
+                    st.session_state.tickets_page += 1
+                    st.rerun()
 
 st.markdown("")
 st.markdown("")
