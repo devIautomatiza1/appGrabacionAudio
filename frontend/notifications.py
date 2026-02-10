@@ -1,5 +1,5 @@
 """
-Funciones centralizadas para mostrar notificaciones
+Funciones centralizadas para mostrar notificaciones con toast automático
 """
 import streamlit as st
 
@@ -17,6 +17,29 @@ NOTIFICATION_EXPANDED_STYLES = {
     "error": "notification-expanded-error",
     "info": "notification-expanded-info",
 }
+
+# Iconos para toasts
+TOAST_ICONS = {
+    "success": "✓",
+    "error": "✕",
+    "warning": "⚠",
+    "info": "ℹ",
+}
+
+
+def _show_toast(message: str, notification_type: str, duration: int = 3) -> None:
+    """
+    Mostrar notificación como toast en esquina superior derecha con auto-desvanecimiento.
+    
+    Args:
+        message: Texto a mostrar
+        notification_type: Tipo de notificación ('success', 'error', 'warning', 'info')
+        duration: Segundos hasta desvanecerse (default: 3)
+    """
+    icon = TOAST_ICONS.get(notification_type, "•")
+    
+    # Usar st.toast para mostrar notificaciones automáticas en esquina
+    st.toast(f"{icon} {message}", icon=notification_type)
 
 
 def _show_notification(message: str, notification_type: str) -> None:
@@ -94,10 +117,15 @@ def _create_notification_function(notification_type: str, style_variant: str):
     
     Args:
         notification_type: 'success', 'error', 'warning', 'info'
-        style_variant: 'compact', 'expanded', 'debug'
+        style_variant: 'toast', 'compact', 'expanded', 'debug'
+                      'toast' = esquina superior derecha con auto-desvanecimiento
+                      'compact', 'expanded', 'debug' = en línea (legacy)
     """
-    def notification_func(message: str) -> None:
-        if style_variant == 'compact':
+    def notification_func(message: str, duration: int = 3) -> None:
+        if style_variant == 'toast':
+            # Toast en esquina superior derecha con auto-desvanecimiento
+            _show_toast(message, notification_type, duration)
+        elif style_variant == 'compact':
             _show_notification(message, notification_type)
         elif style_variant == 'expanded':
             _show_notification_expanded(message, notification_type)
@@ -107,12 +135,13 @@ def _create_notification_function(notification_type: str, style_variant: str):
     
     return notification_func
 
-# API pública - Generar funciones automáticamente
-show_success = _create_notification_function("success", "compact")
-show_error = _create_notification_function("error", "compact")
-show_warning = _create_notification_function("warning", "compact")
-show_info = _create_notification_function("info", "compact")
+# API pública - TOASTS (RECOMENDADAS - esquina superior derecha con auto-desvanecimiento)
+show_success = _create_notification_function("success", "toast")
+show_error = _create_notification_function("error", "toast")
+show_warning = _create_notification_function("warning", "toast")
+show_info = _create_notification_function("info", "toast")
 
+# API legacy - En línea (mantener compatibilidad)
 show_success_expanded = _create_notification_function("success", "expanded")
 show_error_expanded = _create_notification_function("error", "expanded")
 show_info_expanded = _create_notification_function("info", "expanded")
