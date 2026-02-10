@@ -256,7 +256,7 @@ with col_right:
         
         # ===== TAB 2: AUDIOS GUARDADOS (BÚSQUEDA) =====
         with tab2:
-            st.subheader("📂 Audios Guardados")
+            st.subheader("Audios Guardados")
             st.caption(f"Gestiona tus {len(recordings)} grabaciones de audio")
             
             st.markdown("")  # Espaciado
