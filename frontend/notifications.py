@@ -290,7 +290,7 @@ def show_delete_confirmation_modal(item_name: str, item_type: str = "elemento") 
 
 def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento", key_prefix: str = "") -> tuple[bool, bool]:
     """
-    Mostrar modal de confirmación bonito con botones.
+    Mostrar modal de confirmación bonito CON BOTONES DENTRO del modal.
     
     Args:
         item_name: Nombre del elemento a eliminar
@@ -300,8 +300,8 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
     Returns:
         Tupla (confirmed: bool, cancelled: bool)
     """
-    # Modal HTML bonito con espacio para botones
-    modal_html = f"""
+    # CSS para el modal y su contenedor
+    st.markdown(f"""
     <style>
         .delete-modal-overlay {{
             position: fixed;
@@ -313,7 +313,7 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
+            z-index: 9995;
             animation: fadeIn 0.25s ease-out;
         }}
         
@@ -333,13 +333,19 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
             }}
         }}
         
+        .delete-modal-wrapper-{key_prefix} {{
+            position: relative;
+            z-index: 10000;
+            width: 92%;
+            max-width: 450px;
+        }}
+        
         .delete-modal-content {{
             background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 40px;
-            max-width: 450px;
-            width: 92%;
+            padding-bottom: 100px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 
                         inset 1px 1px 0 rgba(255, 255, 255, 0.05),
                         0 0 40px rgba(239, 68, 68, 0.1);
@@ -388,25 +394,30 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
             word-break: break-word;
             font-family: 'Courier New', monospace;
             font-size: 13px;
-            background-clip: padding-box;
         }}
         
         .delete-modal-warning {{
             font-size: 12px;
             color: #9ca3af;
-            margin-bottom: 32px;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }}
         
-        .delete-modal-buttons-hint {{
+        .delete-modal-hint {{
             font-size: 11px;
             color: #6b7280;
-            padding-top: 20px;
+            padding-top: 8px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
-            margin-top: 20px;
+        }}
+        
+        .delete-modal-buttons-container-{key_prefix} {{
+            margin-top: -80px;
+            position: relative;
+            z-index: 10001;
+            padding: 0 20px;
         }}
     </style>
     
@@ -420,29 +431,29 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
                 <span>⚡</span>
                 <span>Eliminación permanente</span>
             </div>
-            <div class="delete-modal-buttons-hint">👇 Selecciona una opción abajo</div>
+            <div class="delete-modal-hint">Selecciona una opción abajo 👇</div>
         </div>
     </div>
-    """
+    """, unsafe_allow_html=True)
     
-    st.markdown(modal_html, unsafe_allow_html=True)
-    
-    # Espacio visual
-    st.markdown("")
-    
-    # Mostrar botones grandes y claros
-    col1, col2 = st.columns(2, gap="small")
-    
-    confirmed = False
-    cancelled = False
-    
-    with col1:
-        if st.button("🗑️ Sí, eliminar", key=f"confirm_{key_prefix}", use_container_width=True, type="primary", help="Elimina permanentemente el elemento"):
-            confirmed = True
-    
-    with col2:
-        if st.button("✕ Cancelar", key=f"cancel_{key_prefix}", use_container_width=True, help="Cancela la operación y vuelve"):
-            cancelled = True
+    # Contenedor de botones que visualmente está dentro del modal
+    with st.container():
+        st.markdown(f'<div class="delete-modal-buttons-container-{key_prefix}">', unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2, gap="small")
+        
+        confirmed = False
+        cancelled = False
+        
+        with col1:
+            if st.button("🗑️ Eliminar", key=f"confirm_{key_prefix}", use_container_width=True, type="primary"):
+                confirmed = True
+        
+        with col2:
+            if st.button("✕ Cancelar", key=f"cancel_{key_prefix}", use_container_width=True):
+                cancelled = True
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     return confirmed, cancelled
 
