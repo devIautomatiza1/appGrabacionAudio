@@ -99,15 +99,24 @@ initialize_session_state(recorder)
 init_optimization_state()
 
 # Crear dos columnas principales (4/8 split como en el diseño)
-col_left, col_right = st.columns([4, 8])
+col_left, col_right = st.columns([4, 8], gap="large")
 
 # ============================================================================
 # PANEL IZQUIERDO - Grabadora y Subir Audio
 # ============================================================================
 with col_left:
     # ===== GRABADORA EN VIVO =====
-    st.subheader("Grabadora en vivo")
-    st.caption("Graba directamente desde tu micrófono")
+    st.markdown('''
+    <div class="glass-card" style="padding: 20px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="font-size: 24px;">🎤</div>
+            <div>
+                <h3 style="margin: 0; color: var(--foreground); font-size: 18px; font-weight: 600;">Grabadora en vivo</h3>
+                <p style="margin: 0; color: var(--muted-foreground); font-size: 13px;">Graba directamente desde tu micrófono</p>
+            </div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
     
     audio_data = st.audio_input("", key=f"audio_recorder_{st.session_state.record_key_counter}", label_visibility="collapsed")
     
@@ -124,12 +133,26 @@ with col_left:
                 # Reset el widget para que no se procese nuevamente
                 st.session_state.record_key_counter += 1
     
+    st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
+    
     # ===== SUBIR ARCHIVO DE AUDIO =====
-    st.subheader("Subir archivo de audio")
+    st.markdown('''
+    <div class="glass-card" style="padding: 20px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="font-size: 24px;">📄</div>
+            <div>
+                <h3 style="margin: 0; color: var(--foreground); font-size: 18px; font-weight: 600;">Subir archivo de audio</h3>
+                <p style="margin: 0; color: var(--muted-foreground); font-size: 13px;">Formatos soportados: MP3, WAV, M4A</p>
+            </div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+    
     uploaded_file = st.file_uploader(
         "Selecciona un archivo de audio",
         type=list(AUDIO_EXTENSIONS),
-        key=f"audio_uploader_{st.session_state.upload_key_counter}"
+        key=f"audio_uploader_{st.session_state.upload_key_counter}",
+        label_visibility="collapsed"
     )
     
     if uploaded_file is not None:
@@ -142,13 +165,19 @@ with col_left:
             if success:
                 # Reset el widget para que no se procese nuevamente
                 st.session_state.upload_key_counter += 1
-    
-    st.caption("Formatos soportados: MP3, WAV, M4A")
 
 # ============================================================================
 # PANEL DERECHO - Audios Guardados y Transcripción
 # ============================================================================
 with col_right:
+    # Header del panel derecho
+    st.markdown('''
+    <div style="margin-bottom: 24px;">
+        <h2 style="margin: 0 0 8px 0; color: var(--foreground); font-size: 24px; font-weight: 700;">Gestión de Audios</h2>
+        <p style="margin: 0; color: var(--muted-foreground); font-size: 14px;">Transcribe, busca y administra tus grabaciones</p>
+    </div>
+    ''', unsafe_allow_html=True)
+    
     # Refresh de la lista de audios
     recordings = recorder.get_recordings_from_supabase()
     st.session_state.recordings = recordings
@@ -159,6 +188,8 @@ with col_right:
         
         # ===== TAB 1: TRANSCRIBIR =====
         with tab1:
+            st.markdown("<div style='margin-top: 16px;'></div>", unsafe_allow_html=True)
+            
             # Filtrar audios (reutilizar la búsqueda si existe)
             search_query = st.session_state.get("audio_search", "")
             if search_query and search_query.strip():
@@ -197,15 +228,22 @@ with col_right:
                         st.session_state.contexto = None
                         st.session_state.keywords = {}
                 
-                # Mostrar reproductor de audio
+                # Mostrar reproductor de audio en una glass-card
+                st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+                st.markdown('''
+                <div class="glass-card" style="padding: 16px; margin-bottom: 20px;">
+                    <div style="font-size: 13px; color: var(--muted-foreground); margin-bottom: 8px;">🎵 Reproductor</div>
+                </div>
+                ''', unsafe_allow_html=True)
+                
                 audio_path = recorder.get_recording_path(selected_audio)
                 extension = selected_audio.split('.')[-1]
                 with open(audio_path, "rb") as f:
                     st.audio(f.read(), format=f"audio/{extension}")
                 
-                st.markdown("")  # Espaciado
+                st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
                 
-                col_transcribe, col_delete = st.columns([1, 1])
+                col_transcribe, col_delete = st.columns([1, 1], gap="medium")
                 
                 with col_transcribe:
                     if st.button("Transcribir", use_container_width=True):
@@ -255,7 +293,10 @@ with col_right:
         
         # ===== TAB 2: AUDIOS GUARDADOS (BÚSQUEDA) =====
         with tab2:
+            st.markdown("<div style='margin-top: 16px;'></div>", unsafe_allow_html=True)
             st.caption(f"Total: {len(recordings)} grabaciones")
+            
+            st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
             
             # Búsqueda
             search_query = st.text_input(
@@ -304,10 +345,10 @@ with col_right:
                     transcribed_badge = components.render_badge("Transcrito", "transcribed") if is_transcribed else ""
                     
                     st.markdown(f'''
-                    <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1); cursor: pointer;">
+                    <div class="glass-card-hover" style="padding: 16px 20px; margin: 0 0 12px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1); cursor: pointer; transition: all 0.2s;">
                         <div>
-                            <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
-                            <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
+                            <div style="font-weight: 600; margin-bottom: 6px; font-size: 15px;">{display_name} {transcribed_badge}</div>
+                            <div style="font-size: 12px; color: var(--muted-foreground);">Selecciona en la pesta\u00f1a "Transcribir"</div>
                         </div>
                     </div>
                     ''', unsafe_allow_html=True)
@@ -316,7 +357,7 @@ with col_right:
                 
                 # Controles de paginación (solo si hay más de 1 página)
                 if total_pages > 1:
-                    st.markdown("---")
+                    st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
                     col_prev, col_info, col_next = st.columns([1, 2, 1])
                     
                     with col_prev:
@@ -340,6 +381,7 @@ with col_right:
         
         # ===== TAB 3: GESTIÓN EN LOTE =====
         with tab3:
+            st.markdown("<div style='margin-top: 16px;'></div>", unsafe_allow_html=True)
             st.subheader("Eliminar múltiples audios")
             
             audios_to_delete = st.multiselect(
