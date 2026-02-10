@@ -302,31 +302,43 @@ with col_right:
                     is_transcribed = is_audio_transcribed(recording, db_utils)
                     transcribed_badge = components.render_badge("Transcrito", "transcribed") if is_transcribed else ""
                     
-                    # ID único para el expander
+                    # ID único para cada grabación
                     rec_id = f"rec_{start_idx + idx}"
                     
-                    # Expander que se ve como tarjeta
-                    with st.expander(f"▸ {display_name} {transcribed_badge}", expanded=False):
-                        st.markdown("---")
-                        st.markdown("**✏️ Renombrar grabación**")
-                        
-                        # Formulario para renombrar
+                    # Tarjeta con diseño original
+                    st.markdown(f'''
+                    <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1);">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
+                            <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
+                        </div>
+                    </div>
+                    ''', unsafe_allow_html=True)
+                    
+                    # Botón para mostrar/ocultar formulario de renombrado
+                    if st.button("✏️ Renombrar", key=f"btn_rename_{rec_id}", use_container_width=False):
+                        st.session_state[f"show_rename_{rec_id}"] = not st.session_state.get(f"show_rename_{rec_id}", False)
+                        st.rerun()
+                    
+                    # Mostrar formulario de renombrado si está activo
+                    if st.session_state.get(f"show_rename_{rec_id}", False):
                         with st.form(key=f"rename_form_{rec_id}"):
                             new_name = st.text_input(
                                 "Nuevo nombre:",
-                                value=recording.rsplit('.', 1)[0],  # Sin extensión
+                                value=recording.rsplit('.', 1)[0],
                                 placeholder="Ingresa el nuevo nombre..."
                             )
                             
                             col_r1, col_r2 = st.columns(2)
                             with col_r1:
-                                rename_submitted = st.form_submit_button("Renombrar", use_container_width=True, type="primary")
+                                rename_submitted = st.form_submit_button("Guardar", use_container_width=True, type="primary")
                             with col_r2:
-                                st.markdown("")
+                                if st.form_submit_button("Cancelar", use_container_width=True):
+                                    st.session_state[f"show_rename_{rec_id}"] = False
+                                    st.rerun()
                             
                             if rename_submitted and new_name.strip():
                                 new_name_clean = new_name.strip()
-                                # Mantener la extensión original
                                 ext = recording.split('.')[-1]
                                 new_filename = f"{new_name_clean}.{ext}"
                                 
@@ -334,13 +346,14 @@ with col_right:
                                     if recorder.rename_recording(recording, new_filename):
                                         show_success(f"Renombrado: {recording} → {new_filename}")
                                         add_debug_event(f"Grabación renombrada: {recording} → {new_filename}", "success")
+                                        st.session_state[f"show_rename_{rec_id}"] = False
                                         st.rerun()
                                     else:
                                         show_error("Error al renombrar la grabación")
                                 else:
                                     show_warning("El nuevo nombre es igual al actual")
-                        
-                        st.caption(f"📁 Archivo original: {recording}")
+                    
+                    st.markdown("")  # Espaciado
                 
                 # Controles de paginación (solo si hay más de 1 página)
                 if total_pages > 1:
