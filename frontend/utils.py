@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import MAX_AUDIO_SIZE_MB
 from logger import get_logger
 from frontend.notifications import show_success, show_error, show_success_debug
+import streamlit as st
 
 logger = get_logger(__name__)
 
@@ -71,6 +72,16 @@ def process_audio_file(
         
         logger.info(f"✓ Audio OK: {filename} (ID: {recording_id})")
         show_success_debug(f"'{filename}' guardado en Supabase")
+        # Agregar al registro de debug
+        if "debug_log" not in st.session_state:
+            st.session_state.debug_log = []
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        st.session_state.debug_log.append({
+            "time": timestamp,
+            "type": "success",
+            "message": f"Audio '{filename}' guardado en Supabase (ID: {recording_id})"
+        })
         return True, recording_id
     
     except (ValueError, FileNotFoundError) as e:

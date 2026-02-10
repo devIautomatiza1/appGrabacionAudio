@@ -51,12 +51,26 @@ def initialize_session_state(recorder_obj: AudioRecorder) -> None:
         "delete_confirmation": {},
         "transcription_cache": {},
         "chat_history_limit": CHAT_HISTORY_LIMIT,
-        "opp_delete_confirmation": {}
+        "opp_delete_confirmation": {},
+        "debug_log": []  # Registro de eventos para el DEBUG
     }
     
     for key, value in session_defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
+
+# Función auxiliar para agregar eventos al debug log
+def add_debug_event(message: str, event_type: str = "info") -> None:
+    """Agrega un evento al registro de debug"""
+    if "debug_log" not in st.session_state:
+        st.session_state.debug_log = []
+    
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    st.session_state.debug_log.append({
+        "time": timestamp,
+        "type": event_type,
+        "message": message
+    })
 
 # ============================================================================
 # CONFIGURACIÓN INICIAL DE LA INTERFAZ DE USUARIO
@@ -188,6 +202,7 @@ with col2:
                         st.session_state.chat_enabled = True
                         st.session_state.keywords = {}
                         show_info_debug("Transcripción cargada desde Supabase")
+                        add_debug_event(f"Transcripción cargada para '{selected_audio}'", "success")
                     else:
                         # Si no existe transcripción, marcar que se cargó este audio (pero sin transcripción)
                         st.session_state.selected_audio = selected_audio
@@ -225,6 +240,7 @@ with col2:
                                 )
                                 
                                 show_success_debug(f"✓ Transcripción guardada: {transcription_id}")
+                                add_debug_event(f"Transcripción completada para '{selected_audio}' (ID: {transcription_id})", "success")
                             except Exception as e:
                                 show_error_expanded(f"Error al transcribir: {e}")
                 
@@ -247,6 +263,7 @@ with col2:
                                     st.session_state.selected_audio = None
                                     st.session_state.delete_confirmation.pop(selected_audio, None)
                                     show_success_expanded(f"✓ '{selected_audio}' eliminado")
+                                    add_debug_event(f"Audio '{selected_audio}' eliminado", "success")
                                     st.rerun()  # ACTUALIZAR UI inmediatamente
                         with col_no:
                             if st.button("✗ Cancelar", key=f"confirm_no_{selected_audio}"):
@@ -376,6 +393,7 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                 
                 if saved_count > 0:
                     show_success_expanded(f"{saved_count} ticket(s) de oportunidad generado(s)")
+                    add_debug_event(f"Generados {saved_count} ticket(s) de oportunidad", "success")
                     st.session_state.show_opportunities = True
                 else:
                     show_warning_expanded("No se encontraron oportunidades con las palabras clave")
@@ -601,3 +619,24 @@ with st.expander("🔧 DEBUG - Estado de Supabase"):
         st.write("1. Verifica que RLS esté DESHABILITADO en ambas tablas")
         st.write("2. Haz click en 'Reboot app' en el menú (3 puntos arriba)")
         st.write("3. Verifica que no haya espacios en blanco en los Secrets")
+    
+    # Mostrar registro de eventos
+    st.markdown("---")
+    st.markdown("**📋 Registro de Eventos:**")
+    
+    debug_log = st.session_state.get("debug_log", [])
+    if debug_log:
+        # Mostrar últimos 20 eventos
+        for event in debug_log[-20:]:
+            time = event.get("time", "??:??:??")
+            event_type = event.get("type", "info")
+            message = event.get("message", "")
+            
+            if event_type == "success":
+                st.success(f"[{time}] ✓ {message}", icon="✓")
+            elif event_type == "error":
+                st.error(f"[{time}] ✗ {message}", icon="✗")
+            else:
+                st.info(f"[{time}] ℹ {message}", icon="ℹ")
+    else:
+        st.write("Sin eventos registrados aún")
