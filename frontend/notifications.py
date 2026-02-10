@@ -300,7 +300,7 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
     Returns:
         Tupla (confirmed: bool, cancelled: bool)
     """
-    # Modal HTML bonito
+    # Modal HTML bonito con espacio para botones
     modal_html = f"""
     <style>
         .delete-modal-overlay {{
@@ -394,11 +394,19 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
         .delete-modal-warning {{
             font-size: 12px;
             color: #9ca3af;
-            margin-bottom: 24px;
+            margin-bottom: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+        }}
+        
+        .delete-modal-buttons-hint {{
+            font-size: 11px;
+            color: #6b7280;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 20px;
         }}
     </style>
     
@@ -412,24 +420,28 @@ def show_delete_confirmation_buttons(item_name: str, item_type: str = "elemento"
                 <span>⚡</span>
                 <span>Eliminación permanente</span>
             </div>
+            <div class="delete-modal-buttons-hint">👇 Selecciona una opción abajo</div>
         </div>
     </div>
     """
     
     st.markdown(modal_html, unsafe_allow_html=True)
     
-    # Mostrar botones
+    # Espacio visual
+    st.markdown("")
+    
+    # Mostrar botones grandes y claros
     col1, col2 = st.columns(2, gap="small")
     
     confirmed = False
     cancelled = False
     
     with col1:
-        if st.button("🗑️ Sí, eliminar", key=f"confirm_{key_prefix}", use_container_width=True, type="primary"):
+        if st.button("🗑️ Sí, eliminar", key=f"confirm_{key_prefix}", use_container_width=True, type="primary", help="Elimina permanentemente el elemento"):
             confirmed = True
     
     with col2:
-        if st.button("✕ Cancelar", key=f"cancel_{key_prefix}", use_container_width=True):
+        if st.button("✕ Cancelar", key=f"cancel_{key_prefix}", use_container_width=True, help="Cancela la operación y vuelve"):
             cancelled = True
     
     return confirmed, cancelled
