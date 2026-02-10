@@ -502,7 +502,7 @@ if st.session_state.get("chat_enabled", False):
     if st.session_state.get("keywords"):
         keywords_list = list(st.session_state.get("keywords", {}).keys())
         if keywords_list:
-            show_info_expanded(f"Palabras clave activas: {', '.join(keywords_list)}")
+            show_info_debug(f"Palabras clave activas: {', '.join(keywords_list)}")
     
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
