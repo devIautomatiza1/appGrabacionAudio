@@ -362,7 +362,6 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                     if "keywords" not in st.session_state:
                         st.session_state.keywords = {}
                     st.session_state.keywords[cleaned_keyword] = cleaned_keyword
-                    show_success_expanded(f"'{cleaned_keyword}' añadida")
                     st.rerun()
             else:
                 show_error_expanded("Ingresa una palabra clave")
