@@ -307,7 +307,10 @@ with col_right:
                     # ID único para el expander
                     rec_id = f"rec_{start_idx + idx}"
                     
+                    # Mostrar la tarjeta con diseño original
                     with st.expander(f"{display_name} {transcribed_badge}", expanded=False):
+                        st.caption("Haz clic aquí para renombrar esta grabación")
+                        
                         # Formulario para renombrar
                         with st.form(key=f"rename_form_{rec_id}"):
                             new_name = st.text_input(
