@@ -67,32 +67,11 @@ st.set_page_config(layout="wide", page_title=APP_NAME)
 # Cargar estilos CSS desde archivo
 st.markdown(styles.get_styles(), unsafe_allow_html=True)
 
-# Inicializar objetos CON CACHE para no recargar cada renderizado
-@st.cache_resource
-def get_recorder():
-    return AudioRecorder()
-
-@st.cache_resource
-def get_transcriber():
-    return Transcriber()
-
-@st.cache_resource
-def get_model():
-    return Model()
-
-@st.cache_resource
-def get_opp_manager():
-    return OpportunitiesManager()
-
-# Cachear lista de audios con timeout de 30 segundos
-@st.cache_data(ttl=30)
-def get_cached_recordings():
-    return AudioRecorder().get_recordings_from_supabase()
-
-recorder = get_recorder()
-transcriber_model = get_transcriber()
-chat_model = get_model()
-opp_manager = get_opp_manager()
+# Inicializar objetos
+recorder = AudioRecorder()
+transcriber_model = Transcriber()
+chat_model = Model()
+opp_manager = OpportunitiesManager()
 
 # Inicializar estado de sesión de forma centralizada
 initialize_session_state(recorder)
@@ -147,20 +126,12 @@ with col1:
 with col2:
     st.markdown('<h3 style="color: white;">Audios Guardados</h3>', unsafe_allow_html=True)
     
-    # Usar versión en CACHE de los audios (se actualiza cada 30s)
-    recordings = get_cached_recordings()
+    # Refresh de la lista de audios desde Supabase cada vez que se renderiza (para sincronizar)
+    recordings = recorder.get_recordings_from_supabase()
     st.session_state.recordings = recordings
     
     if recordings:
         show_info_expanded(f"Total: {len(recordings)} audio(s)")
-        
-        # Botón para forzar actualización (si se demora)
-        col_refresh = st.columns(1)
-        with col_refresh[0]:
-            if st.button("🔄 Actualizar lista (si no aparece un audio reciente)", use_container_width=False):
-                # Invalidar caché de audios
-                get_cached_recordings.clear()
-                st.rerun()  # Recargar UI
         
         # BÚSQUEDA Y FILTRO DE AUDIOS EN TIEMPO REAL
         search_query = st.text_input(
@@ -216,6 +187,7 @@ with col2:
                         st.session_state.loaded_audio = selected_audio
                         st.session_state.chat_enabled = True
                         st.session_state.keywords = {}
+                        show_info_expanded("Transcripción cargada desde Supabase")
                     else:
                         # Si no existe transcripción, marcar que se cargó este audio (pero sin transcripción)
                         st.session_state.selected_audio = selected_audio
@@ -251,6 +223,8 @@ with col2:
                                     content=transcription.text,
                                     language="es"
                                 )
+                                
+                                show_success_expanded("Transcripción completada y guardada en Supabase")
                             except Exception as e:
                                 show_error_expanded(f"Error al transcribir: {e}")
                 
@@ -273,8 +247,6 @@ with col2:
                                     st.session_state.selected_audio = None
                                     st.session_state.delete_confirmation.pop(selected_audio, None)
                                     show_success_expanded(f"✓ '{selected_audio}' eliminado")
-                                    # Invalidar caché de audios para mostrar lista actualizada
-                                    get_cached_recordings.clear()
                                     st.rerun()  # ACTUALIZAR UI inmediatamente
                         with col_no:
                             if st.button("✗ Cancelar", key=f"confirm_no_{selected_audio}"):
@@ -316,8 +288,6 @@ with col2:
                             
                             if deleted_count > 0:
                                 show_success_expanded(f"✓ {deleted_count} audio(s) eliminado(s) - Actualización instantánea")
-                                # Invalidar caché de audios para mostrar lista actualizada
-                                get_cached_recordings.clear()
                                 st.rerun()  # ACTUALIZAR UI inmediatamente
                 
                 with col_cancel:
@@ -363,6 +333,7 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
                     if "keywords" not in st.session_state:
                         st.session_state.keywords = {}
                     st.session_state.keywords[cleaned_keyword] = cleaned_keyword
+                    show_success_expanded(f"'{cleaned_keyword}' añadida")
                     st.rerun()
             else:
                 show_error_expanded("Ingresa una palabra clave")
