@@ -224,7 +224,7 @@ with col2:
                                     language="es"
                                 )
                                 
-                                show_success_expanded("Transcripción completada y guardada en Supabase")
+                                show_success_debug(f"✓ Transcripción guardada: {transcription_id}")
                             except Exception as e:
                                 show_error_expanded(f"Error al transcribir: {e}")
                 
