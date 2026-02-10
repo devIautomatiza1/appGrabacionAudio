@@ -423,9 +423,15 @@ def get_styles():
     /* Audio input moderno */
     .stAudioInput {
         background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
+        border: 2px dashed var(--glass-border);
         border-radius: 16px;
         padding: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .stAudioInput:hover {
+        border-color: var(--cyber-purple);
+        background: rgba(139, 92, 246, 0.1);
     }
 
     /* ============================================================
