@@ -351,16 +351,18 @@ with col_right:
                             st.markdown(f'''
                             <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1); cursor: pointer;">
                                 <div>
-                                    <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
+                                    <div style="font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 12px;">{display_name} {transcribed_badge}</div>
                                     <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
                                 </div>
                             </div>
                             ''', unsafe_allow_html=True)
                         
                         with col_edit:
+                            st.markdown('<div style="padding-top: 8px;">', unsafe_allow_html=True)
                             if st.button("✏️", key=f"edit_{rec_id}", help="Renombrar"):
                                 st.session_state[f"show_rename_{rec_id}"] = True
                                 st.rerun()
+                            st.markdown('</div>', unsafe_allow_html=True)
                     
                     st.markdown("")  # Espaciado
                 
