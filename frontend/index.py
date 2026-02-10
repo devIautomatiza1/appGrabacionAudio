@@ -216,7 +216,6 @@ with col2:
                         st.session_state.loaded_audio = selected_audio
                         st.session_state.chat_enabled = True
                         st.session_state.keywords = {}
-                        show_info_expanded("Transcripción cargada desde Supabase")
                     else:
                         # Si no existe transcripción, marcar que se cargó este audio (pero sin transcripción)
                         st.session_state.selected_audio = selected_audio
@@ -252,8 +251,6 @@ with col2:
                                     content=transcription.text,
                                     language="es"
                                 )
-                                
-                                show_success_expanded("Transcripción completada y guardada en Supabase")
                             except Exception as e:
                                 show_error_expanded(f"Error al transcribir: {e}")
                 
