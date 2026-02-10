@@ -256,7 +256,10 @@ with col_right:
         
         # ===== TAB 2: AUDIOS GUARDADOS (BÚSQUEDA) =====
         with tab2:
-            st.caption(f"Total: {len(recordings)} grabaciones")
+            st.subheader("📂 Audios Guardados")
+            st.caption(f"Gestiona tus {len(recordings)} grabaciones de audio")
+            
+            st.markdown("")  # Espaciado
             
             # Búsqueda
             search_query = st.text_input(
@@ -305,37 +308,24 @@ with col_right:
                     # ID único para cada grabación
                     rec_id = f"rec_{start_idx + idx}"
                     
-                    # Tarjeta con diseño original
-                    st.markdown(f'''
-                    <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1);">
-                        <div>
-                            <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
-                            <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
-                        </div>
-                    </div>
-                    ''', unsafe_allow_html=True)
-                    
-                    # Botón para mostrar/ocultar formulario de renombrado
-                    if st.button("✏️ Renombrar", key=f"btn_rename_{rec_id}", use_container_width=False):
-                        st.session_state[f"show_rename_{rec_id}"] = not st.session_state.get(f"show_rename_{rec_id}", False)
-                        st.rerun()
-                    
-                    # Mostrar formulario de renombrado si está activo
+                    # Si está en modo renombrado, mostrar formulario
                     if st.session_state.get(f"show_rename_{rec_id}", False):
                         with st.form(key=f"rename_form_{rec_id}"):
-                            new_name = st.text_input(
-                                "Nuevo nombre:",
-                                value=recording.rsplit('.', 1)[0],
-                                placeholder="Ingresa el nuevo nombre..."
-                            )
+                            col_input, col_btn = st.columns([3, 1])
+                            with col_input:
+                                new_name = st.text_input(
+                                    "Nuevo nombre:",
+                                    value=recording.rsplit('.', 1)[0],
+                                    placeholder="Ingresa el nuevo nombre...",
+                                    label_visibility="collapsed"
+                                )
+                            with col_btn:
+                                rename_submitted = st.form_submit_button("✓", use_container_width=True, type="primary")
                             
-                            col_r1, col_r2 = st.columns(2)
-                            with col_r1:
-                                rename_submitted = st.form_submit_button("Guardar", use_container_width=True, type="primary")
-                            with col_r2:
-                                if st.form_submit_button("Cancelar", use_container_width=True):
-                                    st.session_state[f"show_rename_{rec_id}"] = False
-                                    st.rerun()
+                            col_cancel = st.columns(1)[0]
+                            if st.form_submit_button("✗ Cancelar", use_container_width=False):
+                                st.session_state[f"show_rename_{rec_id}"] = False
+                                st.rerun()
                             
                             if rename_submitted and new_name.strip():
                                 new_name_clean = new_name.strip()
@@ -352,6 +342,22 @@ with col_right:
                                         show_error("Error al renombrar la grabación")
                                 else:
                                     show_warning("El nuevo nombre es igual al actual")
+                    else:
+                        # Tarjeta con botón integrado
+                        col_card, col_btn = st.columns([5, 1])
+                        with col_card:
+                            st.markdown(f'''
+                            <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1);">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
+                                    <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
+                                </div>
+                            </div>
+                            ''', unsafe_allow_html=True)
+                        with col_btn:
+                            if st.button("✏️", key=f"btn_rename_{rec_id}", use_container_width=True, help="Renombrar"):
+                                st.session_state[f"show_rename_{rec_id}"] = True
+                                st.rerun()
                     
                     st.markdown("")  # Espaciado
                 
