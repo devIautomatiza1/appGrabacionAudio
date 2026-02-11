@@ -11,6 +11,7 @@ sys.path.insert(0, str(app_root / "frontend"))
 # Importar configuración y logger
 from config import APP_NAME, AUDIO_EXTENSIONS
 from logger import get_logger
+from input_validator import validator
 
 logger = get_logger(__name__)
 
@@ -162,7 +163,14 @@ with col_right:
         with tab1:
             # Filtrar audios (reutilizar la búsqueda si existe)
             search_query = st.session_state.get("audio_search", "")
-            if search_query and search_query.strip():
+            
+            # ===== VALIDAR BÚSQUEDA =====
+            valid, error = validator.validate_search_query(search_query)
+            if not valid:
+                show_error(f"Búsqueda inválida: {error}")
+                filtered_recordings = recordings
+            elif search_query and search_query.strip():
+                # Búsqueda válida: aplicar filtro
                 search_safe = re.escape(search_query.strip())
                 filtered_recordings = [
                     r for r in recordings 
