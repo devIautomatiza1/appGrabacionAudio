@@ -17,7 +17,7 @@ class Transcriber:
         logger.info("✓ Transcriber initialized")
     
     def transcript_audio(self, audio_path: str):
-        """Transcribe un archivo de audio"""
+        """Transcribe un archivo de audio con diarización e identificación de voces"""
         try:
             if not os.path.exists(audio_path):
                 raise FileNotFoundError(f"Archivo no encontrado: {audio_path}")
@@ -28,7 +28,32 @@ class Transcriber:
             logger.info(f"Transcribiendo: {audio_path} ({mime_type})")
             audio_file = genai.upload_file(audio_path, mime_type=mime_type)
             
-            prompt = "Transcribe el audio en texto. Solo devuelve el texto sin explicaciones."
+            # Prompt inteligente con diarización e identificación deductiva de nombres
+            prompt = """Transcribe esta reunión o conversación siguiendo ESTRICTAMENTE estas reglas:
+
+1. **Diarización**: Detecta cada vez que cambia la voz. Identifica quién habla.
+
+2. **Identificación de Nombres** (Efecto Deductivo):
+   - Si alguien dice "Hola María, ¿cómo estás?" y otra voz responde, esa voz es María.
+   - Si la [Voz 1] dice "Juan, necesito el informe" dirigiéndose a otra voz, esa voz es Juan.
+   - Una vez identificado un nombre, úsalo en TODA la transcripción para esa voz.
+
+3. **Formato de salida** (SIN EXPLICACIONES, solo texto):
+   Nombre: "Lo que dijo..."
+   
+   Ejemplo:
+   Jorge: "Hola a todos, gracias por venir."
+   María: "Gracias Jorge, ¿empezamos con el presupuesto?"
+   Voz 3: "Yo aún no tengo el documento."
+   
+4. **Reglas especiales**:
+   - Si no se menciona el nombre, usa "Voz 1", "Voz 2", etc.
+   - Mantén coherencia: una voz = UN nombre durante TODA la transcripción.
+   - Preserva exactamente lo que dijeron, con puntuación natural.
+   - Separa cada intervención en una nueva línea.
+
+Devuelve SOLO la transcripción limpia, sin notas o explicaciones."""
+            
             response = self.model.generate_content([prompt, audio_file])
             
             logger.info(f"✓ Transcripción: {len(response.text)} caracteres")
