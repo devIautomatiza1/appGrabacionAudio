@@ -28,31 +28,39 @@ class Transcriber:
             logger.info(f"Transcribiendo: {audio_path} ({mime_type})")
             audio_file = genai.upload_file(audio_path, mime_type=mime_type)
             
-            # Prompt inteligente con diarización e identificación deductiva de nombres
-            prompt = """Transcribe esta reunión o conversación siguiendo ESTRICTAMENTE estas reglas:
+            # Prompt ESTRICTO para diarización completa e identificación de nombres
+            prompt = """INSTRUCCIONES CRÍTICAS - DEBES SEGUIRLAS AL PIE DE LA LETRA:
 
-1. **Diarización**: Detecta cada vez que cambia la voz. Identifica quién habla.
+TAREA: Transcribe esta conversación/reunión identificando CADA HABLANTE por separado.
 
-2. **Identificación de Nombres** (Efecto Deductivo):
-   - Si alguien dice "Hola María, ¿cómo estás?" y otra voz responde, esa voz es María.
-   - Si la [Voz 1] dice "Juan, necesito el informe" dirigiéndose a otra voz, esa voz es Juan.
-   - Una vez identificado un nombre, úsalo en TODA la transcripción para esa voz.
+PASO 1 - DETECTAR CAMBIOS DE VOZ:
+- Analiza atentamente CADA cambio de voz/hablante
+- Marca donde empieza y termina cada intervención
+- Si hay 2 voces, habrá 2 hablantes. Si hay 3, habrá 3 hablantes. Etc.
 
-3. **Formato de salida** (SIN EXPLICACIONES, solo texto):
-   Nombre: "Lo que dijo..."
-   
-   Ejemplo:
-   Jorge: "Hola a todos, gracias por venir."
-   María: "Gracias Jorge, ¿empezamos con el presupuesto?"
-   Voz 3: "Yo aún no tengo el documento."
-   
-4. **Reglas especiales**:
-   - Si no se menciona el nombre, usa "Voz 1", "Voz 2", etc.
-   - Mantén coherencia: una voz = UN nombre durante TODA la transcripción.
-   - Preserva exactamente lo que dijeron, con puntuación natural.
-   - Separa cada intervención en una nueva línea.
+PASO 2 - IDENTIFICAR NOMBRES (EFECTO DEDUCTIVO):
+- Si alguien dice "Hola Carlos, ¿qué tal?" → Carlos es el otro hablante
+- Si dice "Juan, necesito..." → Juan está siendo mencionado
+- Si la Voz 2 dice un nombre dirigiéndose a otra voz → esa voz es ese nombre
+- Usa SOLO nombres mencionados en la conversación
+- Si no hay nombre mencionado, usa "Voz 1", "Voz 2", etc.
 
-Devuelve SOLO la transcripción limpia, sin notas o explicaciones."""
+PASO 3 - FORMATO EXACTO (SIN EXCEPCIONES):
+CADA INTERVENCIÓN en una NUEVA LÍNEA con este formato:
+Nombre: "Lo que dijo exactamente..."
+
+EJEMPLO CORRECTO:
+Jorge: "Bueno, ¿qué tal? ¿Cómo estáis?"
+María: "Bien, bien. ¿Y tú?"
+Voz 3: "Todo correct."
+
+PASO 4 - REGLAS DE ORO:
+✓ SEPARA por hablante - cada uno su línea
+✓ MANTÉN consistencia - Jorge es Jorge SIEMPRE
+✓ PRESERVA exactitud - transcribe word-by-word
+✓ SIN EXPLICACIONES - solo el diálogo
+
+SALIDA FINAL: Solo el texto formateado, nada más."""
             
             response = self.model.generate_content([prompt, audio_file])
             
