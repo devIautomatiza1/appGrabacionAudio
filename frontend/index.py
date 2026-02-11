@@ -520,62 +520,67 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
         st.markdown("---")
         st.markdown('<h4 style="color: white;">✉️ Enviar Transcripción por Email</h4>', unsafe_allow_html=True)
         
-        col_email1, col_email2 = st.columns([3, 1])
-        with col_email1:
-            recipient_email = st.text_input("Email del destinatario:", placeholder="ejemplo@correo.com", key="email_transcript_input")
-        with col_email2:
-            if st.button("Abrir Gmail", type="primary", use_container_width=True, key="send_transcript_email"):
-                if recipient_email and "@" in recipient_email:
-                    from backend.sharing import generate_email_link, format_content_for_sharing
-                    
-                    content = format_content_for_sharing(
-                        st.session_state.get('selected_audio', 'audio'),
-                        st.session_state.contexto,
-                        is_summary=False
-                    )
-                    
-                    email_link = generate_email_link(
-                        recipient_email,
-                        f"Transcripción - {st.session_state.get('selected_audio', 'audio')}",
-                        content
-                    )
-                    
-                    st.markdown(f'<a href="{email_link}" target="_blank"><button style="background-color: #EA4335; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Abrir en Gmail</button></a>', unsafe_allow_html=True)
-                    st.caption("Se abrirá tu cliente de email con la transcripción lista")
-                    st.session_state.show_email_transcript = False
-                else:
-                    show_error_expanded("Por favor ingresa un email válido")
+        recipient_email = st.text_input("Email del destinatario:", placeholder="ejemplo@correo.com", key="email_transcript_input")
+        
+        if recipient_email:
+            if "@" in recipient_email and "." in recipient_email:
+                from backend.sharing import generate_email_link, format_content_for_sharing
+                
+                content = format_content_for_sharing(
+                    st.session_state.get('selected_audio', 'audio'),
+                    st.session_state.contexto,
+                    is_summary=False
+                )
+                
+                email_link = generate_email_link(
+                    recipient_email,
+                    f"Transcripción - {st.session_state.get('selected_audio', 'audio')}",
+                    content
+                )
+                
+                col_email_action, col_email_close = st.columns([1, 3])
+                with col_email_action:
+                    st.markdown(f'<a href="{email_link}" target="_blank"><button style="background-color: #EA4335; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">Abrir Gmail</button></a>', unsafe_allow_html=True)
+                with col_email_close:
+                    if st.button("Cancelar", use_container_width=True, key="cancel_email_transcript"):
+                        st.session_state.show_email_transcript = False
+                        st.rerun()
+            else:
+                show_error_expanded("❌ Email inválido. Debe contener @ y un dominio (ej: ejemplo@correo.com)")
     
     # Modal para transcripción por WhatsApp
     if st.session_state.get("show_whatsapp_transcript"):
         st.markdown("---")
         st.markdown('<h4 style="color: white;">💬 Enviar Transcripción por WhatsApp</h4>', unsafe_allow_html=True)
         
-        col_wa1, col_wa2 = st.columns([3, 1])
-        with col_wa1:
-            phone_number = st.text_input(
-                "Número WhatsApp (ej: +34632123456):",
-                placeholder="+34632123456",
-                key="whatsapp_transcript_input"
-            )
-        with col_wa2:
-            if st.button("Abrir", type="primary", use_container_width=True, key="send_transcript_whatsapp"):
-                if phone_number and phone_number.startswith("+"):
-                    from backend.sharing import generate_whatsapp_link, format_content_for_sharing
-                    
-                    content = format_content_for_sharing(
-                        st.session_state.get('selected_audio', 'audio'),
-                        st.session_state.contexto,
-                        is_summary=False
-                    )
-                    
-                    whatsapp_url = generate_whatsapp_link(phone_number, content)
-                    
-                    st.markdown(f'<a href="{whatsapp_url}" target="_blank"><button style="background-color: #25D366; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Abrir WhatsApp</button></a>', unsafe_allow_html=True)
-                    st.caption("Se abrirá WhatsApp con la transcripción lista")
-                    st.session_state.show_whatsapp_transcript = False
-                else:
-                    show_error_expanded("Por favor ingresa un número válido (ej: +34632123456)")
+        phone_number = st.text_input(
+            "Número WhatsApp (ej: +34632123456):",
+            placeholder="+34632123456",
+            key="whatsapp_transcript_input"
+        )
+        
+        if phone_number:
+            if phone_number.startswith("+") and len(phone_number) >= 10 and phone_number[1:].isdigit():
+                from backend.sharing import generate_whatsapp_link, format_content_for_sharing
+                
+                content = format_content_for_sharing(
+                    st.session_state.get('selected_audio', 'audio'),
+                    st.session_state.contexto,
+                    is_summary=False
+                )
+                
+                whatsapp_url = generate_whatsapp_link(phone_number, content)
+                
+                col_wa_action, col_wa_close = st.columns([1, 3])
+                with col_wa_action:
+                    st.markdown(f'<a href="{whatsapp_url}" target="_blank"><button style="background-color: #25D366; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">Abrir WhatsApp</button></a>', unsafe_allow_html=True)
+                with col_wa_close:
+                    if st.button("Cancelar", use_container_width=True, key="cancel_whatsapp_transcript"):
+                        st.session_state.show_whatsapp_transcript = False
+                        st.rerun()
+            else:
+                show_error_expanded("❌ Número inválido. Debe empezar con + y contener al menos 10 dígitos (ej: +34632123456)")
+
 
     
     # Mostrar resumen si se está generando o existe
@@ -623,62 +628,67 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
             st.markdown("---")
             st.markdown('<h4 style="color: white;">✉️ Enviar Resumen por Email</h4>', unsafe_allow_html=True)
             
-            col_email1, col_email2 = st.columns([3, 1])
-            with col_email1:
-                recipient_email = st.text_input("Email del destinatario:", placeholder="ejemplo@correo.com", key="email_summary_input")
-            with col_email2:
-                if st.button("Abrir Gmail", type="primary", use_container_width=True, key="send_summary_email"):
-                    if recipient_email and "@" in recipient_email:
-                        from backend.sharing import generate_email_link, format_content_for_sharing
-                        
-                        content = format_content_for_sharing(
-                            st.session_state.get('selected_audio', 'audio'),
-                            st.session_state.summary_text,
-                            is_summary=True
-                        )
-                        
-                        email_link = generate_email_link(
-                            recipient_email,
-                            f"Resumen - {st.session_state.get('selected_audio', 'audio')}",
-                            content
-                        )
-                        
-                        st.markdown(f'<a href="{email_link}" target="_blank"><button style="background-color: #EA4335; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Abrir en Gmail</button></a>', unsafe_allow_html=True)
-                        st.caption("Se abrirá tu cliente de email con el resumen listo")
-                        st.session_state.show_email_modal = False
-                    else:
-                        show_error_expanded("Por favor ingresa un email válido")
+            recipient_email = st.text_input("Email del destinatario:", placeholder="ejemplo@correo.com", key="email_summary_input")
+            
+            if recipient_email:
+                if "@" in recipient_email and "." in recipient_email:
+                    from backend.sharing import generate_email_link, format_content_for_sharing
+                    
+                    content = format_content_for_sharing(
+                        st.session_state.get('selected_audio', 'audio'),
+                        st.session_state.summary_text,
+                        is_summary=True
+                    )
+                    
+                    email_link = generate_email_link(
+                        recipient_email,
+                        f"Resumen - {st.session_state.get('selected_audio', 'audio')}",
+                        content
+                    )
+                    
+                    col_email_action, col_email_close = st.columns([1, 3])
+                    with col_email_action:
+                        st.markdown(f'<a href="{email_link}" target="_blank"><button style="background-color: #EA4335; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">Abrir Gmail</button></a>', unsafe_allow_html=True)
+                    with col_email_close:
+                        if st.button("Cancelar", use_container_width=True, key="cancel_email_summary"):
+                            st.session_state.show_email_modal = False
+                            st.rerun()
+                else:
+                    show_error_expanded("❌ Email inválido. Debe contener @ y un dominio (ej: ejemplo@correo.com)")
         
         # Modal para enviar por WhatsApp
         if st.session_state.get("show_whatsapp_modal"):
             st.markdown("---")
             st.markdown('<h4 style="color: white;">💬 Enviar Resumen por WhatsApp</h4>', unsafe_allow_html=True)
             
-            col_wa1, col_wa2 = st.columns([3, 1])
-            with col_wa1:
-                phone_number = st.text_input(
-                    "Número WhatsApp (ej: +34632123456):",
-                    placeholder="+34632123456",
-                    key="whatsapp_summary_input"
-                )
-            with col_wa2:
-                if st.button("Abrir", type="primary", use_container_width=True, key="send_summary_whatsapp"):
-                    if phone_number and phone_number.startswith("+"):
-                        from backend.sharing import generate_whatsapp_link, format_content_for_sharing
-                        
-                        content = format_content_for_sharing(
-                            st.session_state.get('selected_audio', 'audio'),
-                            st.session_state.summary_text,
-                            is_summary=True
-                        )
-                        
-                        whatsapp_url = generate_whatsapp_link(phone_number, content)
-                        
-                        st.markdown(f'<a href="{whatsapp_url}" target="_blank"><button style="background-color: #25D366; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Abrir WhatsApp</button></a>', unsafe_allow_html=True)
-                        st.caption("Se abrirá WhatsApp con el resumen listo")
-                        st.session_state.show_whatsapp_modal = False
-                    else:
-                        show_error_expanded("Por favor ingresa un número válido (ej: +34632123456)")
+            phone_number = st.text_input(
+                "Número WhatsApp (ej: +34632123456):",
+                placeholder="+34632123456",
+                key="whatsapp_summary_input"
+            )
+            
+            if phone_number:
+                if phone_number.startswith("+") and len(phone_number) >= 10 and phone_number[1:].isdigit():
+                    from backend.sharing import generate_whatsapp_link, format_content_for_sharing
+                    
+                    content = format_content_for_sharing(
+                        st.session_state.get('selected_audio', 'audio'),
+                        st.session_state.summary_text,
+                        is_summary=True
+                    )
+                    
+                    whatsapp_url = generate_whatsapp_link(phone_number, content)
+                    
+                    col_wa_action, col_wa_close = st.columns([1, 3])
+                    with col_wa_action:
+                        st.markdown(f'<a href="{whatsapp_url}" target="_blank"><button style="background-color: #25D366; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">Abrir WhatsApp</button></a>', unsafe_allow_html=True)
+                    with col_wa_close:
+                        if st.button("Cancelar", use_container_width=True, key="cancel_whatsapp_summary"):
+                            st.session_state.show_whatsapp_modal = False
+                            st.rerun()
+                else:
+                    show_error_expanded("❌ Número inválido. Debe empezar con + y contener al menos 10 dígitos (ej: +34632123456)")
+
         
         st.markdown("")
                     
