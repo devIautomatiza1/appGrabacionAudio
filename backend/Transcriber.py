@@ -18,13 +18,11 @@ class Transcriber:
         self.model = genai.GenerativeModel(TRANSCRIPTION_MODEL)
         logger.info("✓ Transcriber initialized")
     
-    def transcript_audio(self, audio_path: str, progress_callback=None):
+    def transcript_audio(self, audio_path: str):
         """Transcribe un archivo de audio con validación y rate limiting
         
         Args:
             audio_path: Ruta del archivo de audio
-            progress_callback: Función para actualizar progreso (ej: st.progress)
-                              Se llama con valores 0.0 a 1.0
             
         Returns:
             Objeto con atributo 'text' conteniendo la transcripción
@@ -50,10 +48,6 @@ class Transcriber:
             if not valid:
                 raise ValueError(f"Tamaño inválido: {error}")
             
-            # ===== PROGRESS: 20% =====
-            if progress_callback:
-                progress_callback(0.2)
-            
             # ===== RATE LIMITING =====
             if not gemini_limiter.is_allowed("transcription"):
                 wait_time = gemini_limiter.get_wait_time("transcription")
@@ -61,25 +55,12 @@ class Transcriber:
                 logger.warning(error_msg)
                 raise RuntimeError(error_msg)
             
-            # ===== PROGRESS: 40% =====
-            if progress_callback:
-                progress_callback(0.4)
-            
             # ===== TRANSCRIPCIÓN =====
             ext = audio_path.lower().split('.')[-1]
             mime_type = MIME_TYPES.get(ext, 'audio/mpeg')
             
             logger.info(f"Transcribiendo: {audio_path} ({mime_type})")
-            
-            # ===== PROGRESS: 60% (Subiendo archivo) =====
-            if progress_callback:
-                progress_callback(0.6)
-            
             audio_file = genai.upload_file(audio_path, mime_type=mime_type)
-            
-            # ===== PROGRESS: 80% (Esperando respuesta de Gemini) =====
-            if progress_callback:
-                progress_callback(0.8)
             
             prompt = "Transcribe el audio en texto. Solo devuelve el texto sin explicaciones."
             response = self.model.generate_content([prompt, audio_file])
@@ -87,10 +68,6 @@ class Transcriber:
             # Validar resultado
             if not response.text or len(response.text.strip()) == 0:
                 raise ValueError("La transcripción resultó vacía")
-            
-            # ===== PROGRESS: 100% =====
-            if progress_callback:
-                progress_callback(1.0)
             
             logger.info(f"✓ Transcripción: {len(response.text)} caracteres")
             
