@@ -2,17 +2,24 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 import streamlit as st
 import sys
+import google.generativeai as genai
+import re
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from logger import get_logger
 from database import init_supabase
 from helpers import safe_json_dump
+from config import GEMINI_API_KEY
 
 logger = get_logger(__name__)
 BASE_DIR = Path(__file__).parent.parent / "data" / "opportunities"
+KEYWORDS_DICT_PATH = Path(__file__).parent.parent / "keywords_dict.json"
+
+# Configurar Gemini
+genai.configure(api_key=GEMINI_API_KEY)
 
 class OpportunitiesManager:
     def __init__(self):
@@ -191,3 +198,204 @@ class OpportunitiesManager:
         except Exception as e:
             logger.error(f"delete_opportunity: {type(e).__name__} - {str(e)}")
             return False
+    
+    def load_keywords_dict(self) -> Dict:
+        """Carga el diccionario de keywords desde JSON"""
+        try:
+            if not KEYWORDS_DICT_PATH.exists():
+                logger.warning(f"Keywords dict not found at {KEYWORDS_DICT_PATH}")
+                return {}
+            
+            with open(KEYWORDS_DICT_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error loading keywords dict: {type(e).__name__} - {str(e)}")
+            return {}
+    
+    def extract_speakers_from_transcription(self, transcription: str) -> Dict[str, List[str]]:
+        """Extrae speakers y sus fragmentos de la transcripción con formato 'Nombre: "..."'"""
+        speakers = {}
+        try:
+            # Patrón para detectar "Nombre: "texto""
+            pattern = r'^([^:]+):\s*["\']?(.+?)["\']?\s*$'
+            
+            for line in transcription.split('\n'):
+                line = line.strip()
+                if not line:
+                    continue
+                
+                match = re.match(pattern, line)
+                if match:
+                    speaker = match.group(1).strip()
+                    text = match.group(2).strip()
+                    
+                    if speaker not in speakers:
+                        speakers[speaker] = []
+                    speakers[speaker].append(text)
+            
+            return speakers if speakers else {"Unknown": [transcription]}
+        except Exception as e:
+            logger.error(f"Error extracting speakers: {type(e).__name__} - {str(e)}")
+            return {"Unknown": [transcription]}
+    
+    def analyze_opportunities_with_ai(
+        self, 
+        transcription: str, 
+        audio_filename: str
+    ) -> Tuple[int, List[Dict]]:
+        """
+        Análisis inteligente de oportunidades usando Gemini.
+        
+        Args:
+            transcription: Texto completo de la transcripción
+            audio_filename: Nombre del archivo de audio para asociar la oportunidad
+        
+        Returns:
+            Tuple con (número de oportunidades detectadas, lista de oportunidades)
+        """
+        try:
+            # Cargar diccionario de keywords
+            keywords_dict = self.load_keywords_dict()
+            if not keywords_dict:
+                logger.warning("Keywords dict is empty, skipping AI analysis")
+                return 0, []
+            
+            # Extraer speakers de la transcripción
+            speakers = self.extract_speakers_from_transcription(transcription)
+            
+            # Preparar lista de temas
+            temas = keywords_dict.get("temas_de_interes", {})
+            config = keywords_dict.get("configuracion", {})
+            
+            if not temas:
+                logger.warning("No topics found in keywords dict")
+                return 0, []
+            
+            # Construir prompt para Gemini
+            temas_list = "\n".join([
+                f"  - {tema}: ({datos.get('prioridad', 'medium').upper()}) {datos.get('descripcion', '')}"
+                for tema, datos in temas.items()
+            ])
+            
+            speakers_list = ", ".join(speakers.keys())
+            
+            prompt = f"""Eres un Analista Empresarial Experto. Analiza esta transcripción de reunión buscando INTENCIONES y CONCEPTOS, no solo palabras clave exactas.
+
+TEMAS A BUSCAR:
+{temas_list}
+
+TRANSCRIPCIÓN:
+{transcription}
+
+PARTICIPANTES: {speakers_list}
+
+INSTRUCCIONES CRÍTICAS:
+1. Busca INTENCIONES detrás de las palabras, no solo coincidencias textuales
+2. Si alguien dice "Necesitamos recursos para el proyecto" → Busca "Infraestructura" o "Acción requerida"
+3. Si detectas algo relacionado con los temas listados, DEBES reportarlo
+4. Para cada oportunidad detectada incluye el quién lo dijo basado en los participantes
+5. Devuelve SOLO JSON válido, sin explicaciones adicionales
+
+FORMATO DE RESPUESTA (JSON):
+{{
+  "oportunidades": [
+    {{
+      "tema": "Nombre del tema exacto del diccionario",
+      "prioridad": "high/medium/low",
+      "mencionado_por": "Nombre del participante",
+      "contexto": "La frase exacta o parafraseo del contexto",
+      "confianza": 0.95
+    }}
+  ]
+}}
+
+Si no encuentras oportunidades, devuelve: {{"oportunidades": []}}"""
+            
+            # Llamar a Gemini
+            logger.debug(f"Sending analysis to Gemini...")
+            model = genai.GenerativeModel(config.get("modelo_gemini", "gemini-1.5-flash"))
+            response = model.generate_content(prompt)
+            response_text = response.text.strip()
+            
+            # Remover markdown code blocks si existen
+            if response_text.startswith("```"):
+                response_text = response_text.split("```")[1]
+                if response_text.startswith("json"):
+                    response_text = response_text[4:]
+            if response_text.endswith("```"):
+                response_text = response_text[:-3]
+            response_text = response_text.strip()
+            
+            # Parsear respuesta JSON
+            try:
+                response_json = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse Gemini response as JSON: {str(e)[:100]}")
+                logger.debug(f"Response was: {response_text[:500]}")
+                return 0, []
+            
+            oportunidades_data = response_json.get("oportunidades", [])
+            if not oportunidades_data:
+                logger.info("No opportunities detected by AI")
+                return 0, []
+            
+            # Obtener recording_id
+            recording_id = self.get_recording_id(audio_filename)
+            if not recording_id:
+                logger.warning(f"Recording ID not found for {audio_filename}, cannot save opportunities")
+                return 0, []
+            
+            # Guardar cada oportunidad en Supabase
+            saved_opportunities = []
+            for opp in oportunidades_data:
+                try:
+                    # Validar confianza mínima
+                    confianza = opp.get("confianza", 0.7)
+                    min_confianza = config.get("minimo_confianza", 0.7)
+                    if confianza < min_confianza:
+                        logger.debug(f"Skipping opportunity with low confidence: {confianza}")
+                        continue
+                    
+                    # Construir nota
+                    tema = opp.get("tema", "Unknown")
+                    mencionado_por = opp.get("mencionado_por", "Unknown")
+                    contexto = opp.get("contexto", "")
+                    
+                    note = f"Ticket generado automáticamente por IA tras detectar una intención relacionada con el concepto '{tema}' del diccionario corporativo.\n\nMencionado por: {mencionado_por}\nContexto: {contexto}"
+                    
+                    # Preparar datos para Supabase
+                    priority_map = {
+                        "high": "High",
+                        "medium": "Medium",
+                        "low": "Low"
+                    }
+                    
+                    opportunity_data = {
+                        "recording_id": recording_id,
+                        "title": tema,
+                        "description": contexto,
+                        "status": "new",
+                        "priority": priority_map.get(opp.get("prioridad", "medium"), "Medium"),
+                        "notes": note,
+                        "created_at": datetime.now().isoformat(),
+                        "mencionado_por": mencionado_por
+                    }
+                    
+                    # Insertar en Supabase
+                    if self.db:
+                        result = self.db.table("opportunities").insert(opportunity_data).execute()
+                        if result.data:
+                            opp_id = result.data[0].get("id")
+                            logger.info(f"✓ AI-Detected opportunity saved: {opp_id} ({tema})")
+                            saved_opportunities.append(result.data[0])
+                
+                except Exception as inner_e:
+                    logger.error(f"Error saving individual opportunity: {type(inner_e).__name__} - {str(inner_e)}")
+                    continue
+            
+            logger.info(f"✓ AI Analysis complete: {len(saved_opportunities)} opportunities detected")
+            return len(saved_opportunities), saved_opportunities
+        
+        except Exception as e:
+            logger.error(f"analyze_opportunities_with_ai: {type(e).__name__} - {str(e)}")
+            return 0, []

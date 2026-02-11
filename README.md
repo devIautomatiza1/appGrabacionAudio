@@ -77,7 +77,10 @@
 
 ### 🎫 Gestión de Tickets
 - **Sistema de oportunidades de negocio** automático
-- Crear tickets desde transcripciones
+- **Análisis de Intenciones con IA**: Detecta automáticamente oportunidades buscando intenciones, no solo palabras exactas
+- **Creación automática de tickets**: Después de transcribir, Gemini analiza la conversación y genera tickets
+- **Asignación inteligente**: Detecta automáticamente quién mencionó cada oportunidad (via diarización)
+- **Diccionario de Conceptos**: Personalizable mediante `keywords_dict.json` para detectar temas específicos de tu industria
 - Estados: Open, In Progress, Closed
 - Niveles de prioridad: High, Medium, Low
 - Paginación inteligente con navegación por números de página
@@ -452,6 +455,9 @@ La aplicación se abrirá en tu navegador en `http://localhost:8501`
 3. Presiona **"Transcribir"**
 4. Espera a que Gemini procese el audio
 5. Verás la transcripción con los hablantes identificados
+6. **🤖 Automáticamente**: El sistema analiza la transcripción buscando oportunidades basadas en tu diccionario de conceptos
+7. ✅ Una notificación te indicará: "Análisis de IA completado: Se han detectado X nuevas oportunidades"
+8. Los tickets generados aparecen automáticamente en la pestaña "Audios guardados" bajo el audio
 
 ### 4️⃣ Chatear con el Asistente IA
 1. Después de transcribir, aparece el panel de chat
@@ -478,6 +484,20 @@ La aplicación se abrirá en tu navegador en `http://localhost:8501`
 1. Presiona **"💬 WhatsApp"** en la transcripción o resumen
 2. Introduce el número con código país (ej: +34632123456)
 3. Presiona **"Abrir WhatsApp"** (el botón se habilita cuando el número es válido)
+
+### 4️⃣.C Análisis Automático de Oportunidades (IA Intent Detection)
+1. **Tras transcribir**, el sistema automáticamente:
+   - Analiza la conversación buscando intenciones, no solo palabras clave
+   - Detecta temas según tu diccionario personalizado (`keywords_dict.json`)
+   - Identifica quién mencionó cada oportunidad (via diarización)
+   - Asigna prioridades basadas en el diccionario
+2. **Ver oportunidades detectadas**:
+   - En la pestaña **"Audios guardados"** verás un área "Tickets Detectados"
+   - Cada ticket muestra el tema, prioridad, quién lo mencionó y el contexto exacto
+3. **Personalizar temas detectados**:
+   - Edita `keywords_dict.json` en la raíz del proyecto
+   - Agrega nuevos temas con su descripción y variantes
+   - El sistema usará automáticamente los temas personalizados en el siguiente análisis
 4. WhatsApp Web/App se abre con el contenido listo para enviar
 
 **Validaciones automáticas:**
@@ -683,6 +703,91 @@ Ver `requirements.txt` para lista completa.
 - [ ] Soporte para múltiples idiomas
 - [ ] SDK para terceras aplicaciones
 - [ ] Análisis de palabras clave automático
+
+---
+
+## 🤖 Análisis Inteligente de Oportunidades (IA Intent Detection)
+
+**Nueva Característica v1.1:** El sistema ahora usa **Análisis de Intenciones con IA** en lugar de simples búsquedas por palabras clave.
+
+### ¿Qué Cambia?
+
+**Antes:**
+```
+Transcripción: "Necesitamos presupuesto para estos recursos"
+Sistema encontraba: Solo si escribía exactamente "presupuesto"
+```
+
+**Ahora:**
+```
+Transcripción: "Necesitamos dinero para implementar las herramientas"
+Gemini entiende: Intención relacionada con "Presupuesto" + "Infraestructura"
+Sistema genera: 2 tickets automáticamente
+```
+
+### Cómo Funciona
+
+1. **Después de transcribir**, el sistema automáticamente:
+   - Envía la transcripción a Gemini 1.5 Flash
+   - Gemini analiza buscando **intenciones y conceptos** (no solo palabras)
+   - Extrae quién lo mencionó y el contexto exacto
+
+2. **Se generan tickets automáticamente** con:
+   - **Tema**: El concepto detectado (ej: "Presupuesto", "Cierre de venta")
+   - **Prioridad**: Del diccionario (High, Medium, Low)
+   - **Mencionado por**: El speaker identificado (via diarización)
+   - **Contexto**: La frase exacta donde se detectó
+   - **Confianza**: Nivel de certeza del análisis (0-100%)
+
+### Personalizar Temas
+
+Edita `keywords_dict.json` para agregar/modificar temas:
+
+```json
+{
+  "temas_de_interes": {
+    "Presupuesto": {
+      "prioridad": "high",
+      "descripcion": "Discusiones sobre presupuestos, gastos, inversiones",
+      "variantes": ["presupuesto", "gasto", "inversión"]
+    },
+    "Mi Tema Personalizado": {
+      "prioridad": "medium",
+      "descripcion": "Descripción para que Gemini entienda",
+      "variantes": ["palabra1", "palabra2"]
+    }
+  }
+}
+```
+
+**Listo:** El siguiente análisis usará automáticamente tus temas personalizados.
+
+### Documentación Completa
+
+Consulta [ANALISIS_IA_OPORTUNIDADES.md](./ANALISIS_IA_OPORTUNIDADES.md) para:
+- Arquitectura detallada del sistema
+- Prompt exacto enviado a Gemini
+- Manejo de errores
+- Métricas de rendimiento
+- FAQ y troubleshooting
+- Roadmap de mejoras
+
+### Ejemplo Real
+
+**Reunión de 10 minutos:**
+```
+Jorge: "Necesitamos $50k para licencias de software"
+María: "Hay que asignar alguien para investigar proveedores"
+Carlos: "¿Quién maneja los temas de GDPR?"
+```
+
+**Tickets Generados Automáticamente:**
+1. ✅ "Presupuesto" (High) - Mencionado por Jorge - Contexto: "$50k para licencias..."
+2. ✅ "Acción requerida" (High) - Mencionado por María - Contexto: "Asignar alguien para investigar..."
+3. ✅ "Cumplimiento Legal" (High) - Mencionado por Carlos - Contexto: "...temas de GDPR"
+
+**Tiempo de análisis:** ~3-5 segundos  
+**Costo:** $0.0001-$0.0002 USD
 
 ---
 

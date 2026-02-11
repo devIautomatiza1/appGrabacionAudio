@@ -256,6 +256,33 @@ with col_right:
                                 
                                 show_success("Transcripción completada")
                                 add_debug_event(f"Transcripción completada para '{selected_audio}' (ID: {transcription_id})", "success")
+                                
+                                # === ANÁLISIS DE OPORTUNIDADES CON IA ===
+                                with st.spinner("Analizando oportunidades con IA..."):
+                                    opportunities_manager = OpportunitiesManager()
+                                    num_opportunities, detected_opps = opportunities_manager.analyze_opportunities_with_ai(
+                                        transcription=transcription.text,
+                                        audio_filename=selected_audio
+                                    )
+                                    
+                                    if num_opportunities > 0:
+                                        st.toast(
+                                            f"✅ Análisis de IA completado: Se han detectado {num_opportunities} nuevas oportunidades.",
+                                            icon="🤖"
+                                        )
+                                        add_debug_event(
+                                            f"IA detectó {num_opportunities} oportunidades para '{selected_audio}'",
+                                            "success"
+                                        )
+                                    else:
+                                        st.toast(
+                                            "ℹ️ Análisis de IA completado: No se detectaron nuevas oportunidades.",
+                                            icon="ℹ️"
+                                        )
+                                        add_debug_event(
+                                            f"IA no detectó oportunidades para '{selected_audio}'",
+                                            "info"
+                                        )
                             except Exception as e:
                                 show_error(f"Error al transcribir: {e}")
                 

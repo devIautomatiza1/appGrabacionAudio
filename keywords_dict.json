@@ -1,0 +1,50 @@
+{
+  "temas_de_interes": {
+    "Presupuesto": {
+      "prioridad": "high",
+      "descripcion": "Discusiones relacionadas con presupuestos, gastos, inversiones, costos",
+      "variantes": ["presupuesto", "gasto", "inversión", "costo", "financiero", "económico", "dinero"]
+    },
+    "Formación": {
+      "prioridad": "medium",
+      "descripcion": "Temas sobre capacitación, entrenamientos, cursos, educación",
+      "variantes": ["formación", "capacitación", "entrenamiento", "curso", "educación", "aprendizaje"]
+    },
+    "Cierre de venta": {
+      "prioridad": "high",
+      "descripcion": "Oportunidades de negocio, ventas, clientes, contratos",
+      "variantes": ["venta", "cliente", "contrato", "acuerdo", "negocio", "oportunidad", "deal"]
+    },
+    "Decisión importante": {
+      "prioridad": "high",
+      "descripcion": "Decisiones estratégicas, cambios importantes, acuerdos",
+      "variantes": ["decidir", "decisión", "acuerdo", "aprobado", "rechazado", "cambio estratégico"]
+    },
+    "Infraestructura": {
+      "prioridad": "medium",
+      "descripcion": "Recursos tecnológicos, herramientas, sistemas, equipos",
+      "variantes": ["infraestructura", "herramienta", "sistema", "equipo", "tecnología", "plataforma"]
+    },
+    "Recursos Humanos": {
+      "prioridad": "medium",
+      "descripcion": "Personal, contratación, equipos, responsabilidades",
+      "variantes": ["contratar", "empleado", "equipo", "personal", "responsabilidad", "rol"]
+    },
+    "Cumplimiento Legal": {
+      "prioridad": "high",
+      "descripcion": "Regulaciones, leyes, compliance, auditoría, riesgos legales",
+      "variantes": ["legal", "cumplimiento", "regulación", "ley", "compliance", "auditoría", "riesgo"]
+    },
+    "Acción requerida": {
+      "prioridad": "high",
+      "descripcion": "Tareas, acciones, follow-ups, responsabilidades asignadas",
+      "variantes": ["hacer", "acción", "tarea", "pendiente", "follow-up", "responsabilidad", "debe"]
+    }
+  },
+  "configuracion": {
+    "modelo_gemini": "gemini-1.5-flash",
+    "idioma_analisis": "es",
+    "detectar_intenciones": true,
+    "minimo_confianza": 0.7
+  }
+}
