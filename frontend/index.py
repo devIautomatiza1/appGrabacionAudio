@@ -11,7 +11,6 @@ sys.path.insert(0, str(app_root / "frontend"))
 # Importar configuración y logger
 from config import APP_NAME, AUDIO_EXTENSIONS
 from logger import get_logger
-from input_validator import validator
 
 logger = get_logger(__name__)
 
