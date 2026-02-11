@@ -11,6 +11,7 @@ sys.path.insert(0, str(app_root / "frontend"))
 # Importar configuración y logger
 from config import APP_NAME, AUDIO_EXTENSIONS
 from logger import get_logger
+from input_validator import validator
 
 logger = get_logger(__name__)
 
@@ -162,7 +163,14 @@ with col_right:
         with tab1:
             # Filtrar audios (reutilizar la búsqueda si existe)
             search_query = st.session_state.get("audio_search", "")
-            if search_query and search_query.strip():
+            
+            # ===== VALIDAR BÚSQUEDA =====
+            valid, error = validator.validate_search_query(search_query)
+            if not valid:
+                show_error(f"Búsqueda inválida: {error}")
+                filtered_recordings = recordings
+            elif search_query and search_query.strip():
+                # Búsqueda válida: aplicar filtro
                 search_safe = re.escape(search_query.strip())
                 filtered_recordings = [
                     r for r in recordings 
@@ -256,7 +264,10 @@ with col_right:
         
         # ===== TAB 2: AUDIOS GUARDADOS (BÚSQUEDA) =====
         with tab2:
-            st.caption(f"Total: {len(recordings)} grabaciones")
+            st.subheader("Audios Guardados")
+            st.caption(f"Gestiona tus {len(recordings)} grabaciones de audio")
+            
+            st.markdown("")  # Espaciado
             
             # Búsqueda
             search_query = st.text_input(
@@ -297,23 +308,71 @@ with col_right:
             
             # Mostrar resultados
             if filtered_recordings:
-                st.markdown(f'''<div style="max-height: 500px; overflow-y: auto; margin-top: 12px;">''', unsafe_allow_html=True)
-                
-                for recording in paginated_recordings:
+                for idx, recording in enumerate(paginated_recordings):
                     display_name = format_recording_name(recording)
                     is_transcribed = is_audio_transcribed(recording, db_utils)
                     transcribed_badge = components.render_badge("Transcrito", "transcribed") if is_transcribed else ""
                     
-                    st.markdown(f'''
-                    <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1); cursor: pointer;">
-                        <div>
-                            <div style="font-weight: 600; margin-bottom: 4px;">{display_name} {transcribed_badge}</div>
-                            <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
-                        </div>
-                    </div>
-                    ''', unsafe_allow_html=True)
-                
-                st.markdown('</div>', unsafe_allow_html=True)
+                    # ID único para cada grabación
+                    rec_id = f"rec_{start_idx + idx}"
+                    
+                    # Si está en modo renombrado, mostrar formulario
+                    if st.session_state.get(f"show_rename_{rec_id}", False):
+                        with st.form(key=f"rename_form_{rec_id}"):
+                            col_input, col_btn1, col_btn2 = st.columns([4, 1, 1])
+                            with col_input:
+                                new_name = st.text_input(
+                                    "Nuevo nombre:",
+                                    value=recording.rsplit('.', 1)[0],
+                                    placeholder="Ingresa el nuevo nombre...",
+                                    label_visibility="collapsed"
+                                )
+                            with col_btn1:
+                                rename_submitted = st.form_submit_button("✓", use_container_width=True, type="primary")
+                            with col_btn2:
+                                cancel_submitted = st.form_submit_button("✗", use_container_width=True)
+                            
+                            if cancel_submitted:
+                                st.session_state[f"show_rename_{rec_id}"] = False
+                                st.rerun()
+                            
+                            if rename_submitted and new_name.strip():
+                                new_name_clean = new_name.strip()
+                                ext = recording.split('.')[-1]
+                                new_filename = f"{new_name_clean}.{ext}"
+                                
+                                if new_filename != recording:
+                                    if recorder.rename_recording(recording, new_filename):
+                                        show_success(f"Renombrado: {recording} → {new_filename}")
+                                        add_debug_event(f"Grabación renombrada: {recording} → {new_filename}", "success")
+                                        st.session_state[f"show_rename_{rec_id}"] = False
+                                        st.rerun()
+                                    else:
+                                        show_error("Error al renombrar la grabación")
+                                else:
+                                    show_warning("El nuevo nombre es igual al actual")
+                    else:
+                        # Tarjeta con botón pequeño a la derecha
+                        col_card, col_edit = st.columns([6, 0.5])
+                        
+                        with col_card:
+                            st.markdown(f'''
+                            <div class="glass-card-hover" style="padding: 12px; margin: 8px 0; border-radius: 12px; background: rgba(42, 45, 62, 0.5); border: 1px solid rgba(139, 92, 246, 0.1); cursor: pointer;">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 12px;">{display_name} {transcribed_badge}</div>
+                                    <div style="font-size: 11px; color: var(--muted-foreground);">Selecciona en la pestaña "Transcribir"</div>
+                                </div>
+                            </div>
+                            ''', unsafe_allow_html=True)
+                        
+                        with col_edit:
+                            st.markdown('<div style="padding-top: 8px;">', unsafe_allow_html=True)
+                            if st.button("✏️", key=f"edit_{rec_id}", help="Renombrar"):
+                                st.session_state[f"show_rename_{rec_id}"] = True
+                                st.rerun()
+                            st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    st.markdown("")  # Espaciado
                 
                 # Controles de paginación (solo si hay más de 1 página)
                 if total_pages > 1:
