@@ -490,46 +490,14 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
     # Mostrar resumen si existe
     if st.session_state.get("summary_text"):
         st.markdown('<h3 style="color: white; margin-top: 20px;">📋 Resumen Generado</h3>', unsafe_allow_html=True)
-        with st.container(border=True):
-            st.markdown(st.session_state.summary_text)
         
-        # Opciones de resumen
-        col_copy, col_clear = st.columns([1, 1])
-        with col_copy:
-            # Botón para copiar con JavaScript nativo
-            copy_button_html = f"""
-            <button 
-                onclick="
-                    const text = `{st.session_state.summary_text.replace(chr(96), '').replace('"', '\\"')}`;
-                    navigator.clipboard.writeText(text).then(() => {{
-                        alert('✓ Resumen copiado al portapapeles');
-                    }}).catch(() => {{
-                        alert('Error al copiar');
-                    }});
-                "
-                style="
-                    width: 100%;
-                    padding: 10px 20px;
-                    background: linear-gradient(135deg, #0052CC 0%, #003d99 100%);
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    font-size: 16px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: 0.3s;
-                "
-                onmouseover="this.style.opacity='0.8'"
-                onmouseout="this.style.opacity='1'"
-            >
-                📋 Copiar Resumen
-            </button>
-            """
-            st.markdown(copy_button_html, unsafe_allow_html=True)
-        with col_clear:
-            if st.button("🗑️ Limpiar Resumen", use_container_width=True):
-                st.session_state.summary_text = None
-                st.rerun()
+        # Mostrar el resumen con botón de copiar integrado de Streamlit
+        st.code(st.session_state.summary_text, language="text")
+        
+        # Botón para limpiar resumen
+        if st.button("🗑️ Limpiar Resumen", use_container_width=True):
+            st.session_state.summary_text = None
+            st.rerun()
         
         st.markdown("")
                     
