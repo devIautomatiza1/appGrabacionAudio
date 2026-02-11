@@ -203,8 +203,28 @@ with col_right:
                 # Mostrar reproductor de audio
                 audio_path = recorder.get_recording_path(selected_audio)
                 extension = selected_audio.split('.')[-1]
-                with open(audio_path, "rb") as f:
-                    st.audio(f.read(), format=f"audio/{extension}")
+                
+                # Verificar si el archivo existe antes de intentar abrirlo
+                audio_file_path = Path(audio_path)
+                if audio_file_path.exists():
+                    try:
+                        with open(audio_path, "rb") as f:
+                            st.audio(f.read(), format=f"audio/{extension}")
+                    except Exception as e:
+                        logger.error(f"Error al reproducir audio: {e}")
+                        show_error(f"Error al reproducir el audio: {str(e)}")
+                else:
+                    # Si el archivo no existe, intentar descargarlo de Supabase nuevamente
+                    from backend.database import download_audio_from_storage
+                    try:
+                        if download_audio_from_storage(selected_audio, audio_path):
+                            with open(audio_path, "rb") as f:
+                                st.audio(f.read(), format=f"audio/{extension}")
+                        else:
+                            show_error("No se pudo descargar el audio desde el almacenamiento. Intenta más tarde.")
+                    except Exception as e:
+                        logger.error(f"Error al descargar/reproducir audio: {e}")
+                        show_error(f"Error al procesar el audio: {str(e)}")
                 
                 st.markdown("")  # Espaciado
                 
