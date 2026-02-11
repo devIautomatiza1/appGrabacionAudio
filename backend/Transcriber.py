@@ -1,4 +1,4 @@
-"""Transcriber.py - Transcribidor de audio con Gemini"""
+"""Transcriber.py - Transcribidor de audio con Gemini (~45 líneas)"""
 import google.generativeai as genai
 import os
 from pathlib import Path

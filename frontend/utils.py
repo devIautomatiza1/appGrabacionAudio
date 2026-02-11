@@ -40,16 +40,15 @@ def process_audio_file(
         - (False, None) si falla
     """
     try:
-        # Validar que no esté vacío
-        if not audio_bytes:
-            show_error("Audio vacío")
-            return False, None
-        
         # Validar tamaño
         size_mb = len(audio_bytes) / (1024 * 1024)
         if size_mb > MAX_AUDIO_SIZE_MB:
             show_error(f"Archivo > {MAX_AUDIO_SIZE_MB}MB ({size_mb:.1f}MB)")
-            logger.warning(f"Audio demasiado grande: {filename} ({size_mb:.1f}MB)")
+            return False, None
+        
+        # Validar que no esté vacío
+        if not audio_bytes:
+            show_error("Audio vacío")
             return False, None
         
         # Detectar duplicados por hash MD5
