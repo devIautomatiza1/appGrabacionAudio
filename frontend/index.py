@@ -59,7 +59,11 @@ def initialize_session_state(recorder_obj: AudioRecorder) -> None:
         "editing_audio": None,  # Archivo siendo editado
         "new_audio_name": "",  # Nuevo nombre del archivo
         "generating_summary": False,  # Flag para generar resumen
-        "summary_text": None  # Texto del resumen generado
+        "summary_text": None,  # Texto del resumen generado
+        "show_email_modal": False,  # Modal para enviar resumen por email
+        "show_whatsapp_modal": False,  # Modal para enviar resumen por WhatsApp
+        "show_email_transcript": False,  # Modal para enviar transcripción por email
+        "show_whatsapp_transcript": False,  # Modal para enviar transcripción por WhatsApp
     }
     
     for key, value in session_defaults.items():
@@ -493,12 +497,89 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
     with st.container(border=True):
         st.text_area("", st.session_state.contexto, height=200, disabled=True, label_visibility="collapsed")
     
-    # Botón para generar resumen
-    col_summary_btn, col_space = st.columns([1, 4])
-    with col_summary_btn:
+    # Botones de acción para transcripción
+    col_trans1, col_trans2, col_trans3 = st.columns(3)
+    
+    with col_trans1:
+        if st.button("📧 Email Transcripción", use_container_width=True, type="secondary"):
+            st.session_state.show_email_transcript = True
+            st.rerun()
+    
+    with col_trans2:
+        if st.button("💬 WhatsApp Transcripción", use_container_width=True, type="secondary"):
+            st.session_state.show_whatsapp_transcript = True
+            st.rerun()
+    
+    with col_trans3:
         if st.button("📝 Generar Resumen", use_container_width=True, type="secondary"):
             st.session_state.generating_summary = True
             st.rerun()
+    
+    # Modal para transcripción por email
+    if st.session_state.get("show_email_transcript"):
+        st.markdown("---")
+        st.markdown('<h4 style="color: white;">✉️ Enviar Transcripción por Email</h4>', unsafe_allow_html=True)
+        
+        col_email1, col_email2 = st.columns([3, 1])
+        with col_email1:
+            recipient_email = st.text_input("Email del destinatario:", placeholder="ejemplo@correo.com", key="email_transcript")
+        with col_email2:
+            if st.button("Enviar", type="primary", use_container_width=True, key="send_transcript_email"):
+                if recipient_email and "@" in recipient_email:
+                    with st.spinner("Enviando transcripción..."):
+                        from backend.sharing import send_email, format_content_for_sharing
+                        
+                        content = format_content_for_sharing(
+                            st.session_state.get('selected_audio', 'audio'),
+                            st.session_state.contexto,
+                            is_summary=False
+                        )
+                        
+                        success, message = send_email(
+                            recipient_email,
+                            f"📄 Transcripción - {st.session_state.get('selected_audio', 'audio')}",
+                            content
+                        )
+                        
+                        if success:
+                            st.success(message)
+                            st.session_state.show_email_transcript = False
+                            st.rerun()
+                        else:
+                            show_error_expanded(message)
+                else:
+                    show_error_expanded("Por favor ingresa un email válido")
+    
+    # Modal para transcripción por WhatsApp
+    if st.session_state.get("show_whatsapp_transcript"):
+        st.markdown("---")
+        st.markdown('<h4 style="color: white;">💬 Enviar Transcripción por WhatsApp</h4>', unsafe_allow_html=True)
+        
+        col_wa1, col_wa2 = st.columns([3, 1])
+        with col_wa1:
+            phone_number = st.text_input(
+                "Número WhatsApp (con código país, ej: +34632123456):",
+                placeholder="+34632123456",
+                key="whatsapp_transcript"
+            )
+        with col_wa2:
+            if st.button("Abrir", type="primary", use_container_width=True, key="send_transcript_whatsapp"):
+                if phone_number and phone_number.startswith("+"):
+                    from backend.sharing import generate_whatsapp_link, format_content_for_sharing
+                    
+                    content = format_content_for_sharing(
+                        st.session_state.get('selected_audio', 'audio'),
+                        st.session_state.contexto,
+                        is_summary=False
+                    )
+                    
+                    whatsapp_url = generate_whatsapp_link(phone_number, content)
+                    
+                    st.markdown(f'<a href="{whatsapp_url}" target="_blank" style="text-decoration: none;"><button style="background-color: #25D366; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Abrir WhatsApp</button></a>', unsafe_allow_html=True)
+                    st.caption("Se abrirá WhatsApp con la transcripción lista para enviar")
+                    st.session_state.show_whatsapp_transcript = False
+                else:
+                    show_error_expanded("Por favor ingresa un número válido con código país (ej: +34632123456)")
     
     # Mostrar resumen si se está generando o existe
     if st.session_state.get("generating_summary"):
@@ -522,10 +603,90 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
         # Mostrar el resumen con botón de copiar integrado de Streamlit
         st.code(st.session_state.summary_text, language="text")
         
-        # Botón para limpiar resumen
-        if st.button("🗑️ Limpiar Resumen", use_container_width=True):
-            st.session_state.summary_text = None
-            st.rerun()
+        # Botones de acción
+        col_actions1, col_actions2, col_actions3 = st.columns(3)
+        
+        with col_actions1:
+            if st.button("📧 Enviar por Email", use_container_width=True, type="secondary"):
+                st.session_state.show_email_modal = True
+                st.rerun()
+        
+        with col_actions2:
+            if st.button("💬 Enviar por WhatsApp", use_container_width=True, type="secondary"):
+                st.session_state.show_whatsapp_modal = True
+                st.rerun()
+        
+        with col_actions3:
+            if st.button("🗑️ Limpiar Resumen", use_container_width=True):
+                st.session_state.summary_text = None
+                st.rerun()
+        
+        # Modal para enviar por email
+        if st.session_state.get("show_email_modal"):
+            st.markdown("---")
+            st.markdown('<h4 style="color: white;">✉️ Enviar Resumen por Email</h4>', unsafe_allow_html=True)
+            
+            col_email1, col_email2 = st.columns([3, 1])
+            with col_email1:
+                recipient_email = st.text_input("Email del destinatario:", placeholder="ejemplo@correo.com", key="email_input")
+            with col_email2:
+                if st.button("Enviar", type="primary", use_container_width=True):
+                    if recipient_email and "@" in recipient_email:
+                        with st.spinner("Enviando email..."):
+                            from backend.sharing import send_email, format_content_for_sharing
+                            
+                            content = format_content_for_sharing(
+                                st.session_state.get('selected_audio', 'audio'),
+                                st.session_state.summary_text,
+                                is_summary=True
+                            )
+                            
+                            success, message = send_email(
+                                recipient_email,
+                                f"📋 Resumen - {st.session_state.get('selected_audio', 'audio')}",
+                                content
+                            )
+                            
+                            if success:
+                                st.success(message)
+                                st.session_state.show_email_modal = False
+                                st.rerun()
+                            else:
+                                show_error_expanded(message)
+                    else:
+                        show_error_expanded("Por favor ingresa un email válido")
+        
+        # Modal para enviar por WhatsApp
+        if st.session_state.get("show_whatsapp_modal"):
+            st.markdown("---")
+            st.markdown('<h4 style="color: white;">💬 Enviar Resumen por WhatsApp</h4>', unsafe_allow_html=True)
+            
+            col_wa1, col_wa2 = st.columns([3, 1])
+            with col_wa1:
+                phone_number = st.text_input(
+                    "Número WhatsApp (con código país, ej: +34632123456):",
+                    placeholder="+34632123456",
+                    key="whatsapp_input"
+                )
+            with col_wa2:
+                if st.button("Abrir ", type="primary", use_container_width=True):
+                    if phone_number and phone_number.startswith("+"):
+                        from backend.sharing import generate_whatsapp_link, format_content_for_sharing
+                        
+                        content = format_content_for_sharing(
+                            st.session_state.get('selected_audio', 'audio'),
+                            st.session_state.summary_text,
+                            is_summary=True
+                        )
+                        
+                        whatsapp_url = generate_whatsapp_link(phone_number, content)
+                        
+                        # Crear un enlace para abrir WhatsApp
+                        st.markdown(f'<a href="{whatsapp_url}" target="_blank" style="text-decoration: none;"><button style="background-color: #25D366; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Abrir WhatsApp</button></a>', unsafe_allow_html=True)
+                        st.caption("Se abrirá WhatsApp con el resumen listo para enviar")
+                        st.session_state.show_whatsapp_modal = False
+                    else:
+                        show_error_expanded("Por favor ingresa un número válido con código país (ej: +34632123456)")
         
         st.markdown("")
                     
