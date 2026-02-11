@@ -476,7 +476,10 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
     if st.session_state.get("generating_summary"):
         with st.spinner("Generando resumen con IA..."):
             try:
-                resumen = chat_model.chat(f"Por favor, genera un resumen conciso y profesional de la siguiente transcripción. El resumen debe incluir: 1) Tema principal, 2) Puntos clave, 3) Decisiones o acciones importantes. Aquí está la transcripción:\n\n{st.session_state.contexto}")
+                resumen = chat_model.call_model(
+                    "Por favor genera un resumen profesional y conciso. Incluye: 1) Tema principal, 2) Puntos clave discutidos, 3) Decisiones o acciones importantes.",
+                    st.session_state.contexto
+                )
                 st.session_state.summary_text = resumen
                 st.session_state.generating_summary = False
                 st.rerun()
