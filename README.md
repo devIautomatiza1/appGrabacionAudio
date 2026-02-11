@@ -58,6 +58,23 @@
 - Extrae información clave automáticamente
 - Respuestas contextuales basadas en el audio transcrito
 
+### 📝 Resumen Automático con IA
+- **Generación de resúmenes profesionales** usando Google Gemini
+- Resume automáticamente:
+  - Tema principal de la reunión
+  - Puntos clave discutidos
+  - Decisiones o acciones importantes
+- Click en botón **"📝 Generar Resumen"** para obtener un resumen completo
+- Copiar resumen con un click automáticamente
+
+### 📤 Compartir por Email y WhatsApp
+- **Enviar transcripciones** completas por Email o WhatsApp
+- **Enviar resúmenes** generados por IA
+- **Opción Email**: Abre tu cliente con el contenido preformulado
+- **Opción WhatsApp**: Abre WhatsApp Web/App lista para enviar
+- **Sin configuración**: No requiere credenciales, solo escribe email o teléfono
+- Contenido formateado y profesional con encabezados y separadores
+
 ### 🎫 Gestión de Tickets
 - **Sistema de oportunidades de negocio** automático
 - Crear tickets desde transcripciones
@@ -116,11 +133,18 @@ Un ayuntamiento necesita administrar y documentar sus reuniones de forma eficien
    - Pregunta: "¿Qué decisión tomó el concejal García sobre el gasto?"
    - IA responde: "El concejal García propuso reducir el gasto en..."
 
+5. **Compartir resumen rápidamente**
+   - Genera un resumen automático de 5 minutos de la reunión de 2 horas
+   - Envía el resumen por Email al Secretario del Ayuntamiento
+   - Envía el resumen por WhatsApp a los Concejales
+   - Listo para que lo compartan con sus equipos
+
 **Beneficios:**
 - ✅ **Documentación automática** - No necesitas tomar notas manualmente
 - ✅ **Trazabilidad** - Sabes exactamente quién dijo qué y cuándo
 - ✅ **Ticket control** - Todos los temas importantes generados automáticamente
 - ✅ **Búsqueda fácil** - Pregunta al IA sobre decisiones pasadas
+- ✅ **Compartición directa** - Envía resúmenes por Email/WhatsApp en segundos
 - ✅ **Legal** - Registro completo de reuniones para auditoría
 
 ---
@@ -183,12 +207,19 @@ Un formador técnico imparte cursos y formaciones, pero durante las sesiones se 
    - Pregunta: "¿Quién mencionó la palabra formación?"
    - IA responde: "Juan de Empresa A, María de Empresa B, y Carlos..."
 
+6. **Envio automático de resúmenes**
+   - Genera un resumen de la sesión
+   - Envía por Email a todos los participantes recordándoles lo tratado
+   - Comparte por WhatsApp el resumen con tus clientes
+   - Facilita follow up sin tomar notas manuales
+
 **Beneficios:**
 - ✅ **Captura automática** - No pierdes ninguna oportunidad
 - ✅ **Identificación clara** - Sabes exactamente quién es cada contacto
 - ✅ **Contexto completo** - Qué dijeron exactamente sobre formación
 - ✅ **Pipeline automático** - Tickets listos para seguimiento
 - ✅ **Escalabilidad** - Graba N sesiones y todas generan oportunidades automáticamente
+- ✅ **Comunicación directa** - Comparte resúmenes por Email/WhatsApp al instante
 
 ---
 
@@ -226,10 +257,53 @@ Con diarización inteligente obtienes:
 - **Python 3.10+** - Lenguaje principal
 
 ### Backend
-- **Python** - Lógica de negocio
-- **Google Generative AI (Gemini)** - Transcripción y análisis inteligente
-- **Supabase** - Base de datos PostgreSQL + Storage
+- **Python 3.10+** - Lenguaje principal para toda la lógica
+- **Google Generative AI (Gemini)** - Transcripción inteligente y generación de resúmenes
+  - Acceso desde Google AI Studio: https://aistudio.google.com
+  - Utiliza el modelo `gemini-1.5-flash` para transcripciones rápidas
+  - Modelo `gemini-1.5-pro` para análisis y resúmenes detallados
+- **OpenAI GPT** - Chat assistant para análisis de transcripciones
+- **Supabase** - Base de datos PostgreSQL + Storage en la nube
 - **Supabase Python Client** - Integración con base de datos
+
+### Herramientas de Desarrollo
+- **Visual Studio Code** - Editor de código y entorno de desarrollo
+- **Python venv** - Entorno virtual para dependencias aisladas
+- **Git** - Control de versiones
+
+### Stack Tecnológico Completo
+```
+┌─────────────────────────────────────────────────────────┐
+│                    FRONTEND (Streamlit)                 │
+│  HTML/CSS con Glassmorphism • Responsive Design        │
+└─────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────┐
+│                PYTHON BACKEND (3.10+)                   │
+│  • Transcriber (Gemini en Google AI Studio)             │
+│  • Model (Chat with OpenAI GPT)                         │
+│  • OpportunitiesManager (Gestión de tickets)            │
+│  • Database (Operaciones Supabase)                      │
+│  • Sharing (Email/WhatsApp)                             │
+└─────────────────────────────────────────────────────────┘
+                    ↓           ↓           ↓
+        ┌───────────┴───────────┴───────────┐
+        │                                   │
+    ┌───▼────────────┐        ┌────▼──────────────┐
+    │  SUPABASE      │        │ GOOGLE AI STUDIO   │
+    │  • PostgreSQL  │        │ • Gemini API       │
+    │  • Storage     │        │ • Transcription    │
+    │  • Auth        │        │ • Summaries        │
+    └────────────────┘        └────▼──────────────┘
+                                    │
+                          ┌─────────┴──────────┐
+                          │                    │
+                      ┌───▼───┐           ┌───▼──────┐
+                      │ OpenAI│           │ Twilio   │
+                      │  GPT  │           │ (futuro) │
+                      │ Chat  │           │ WhatsApp │
+                      └───────┘           └──────────┘
+```
 
 ### Arquitectura
 ```
@@ -259,10 +333,50 @@ appGrabacionAudio/
 ## 🚀 Instalación y Uso
 
 ### Requisitos Previos
-- Python 3.10 o superior
-- Cuenta en Supabase
-- API Key de Google Gemini
-- Cuenta para Chat IA (OpenAI o similar)
+- **Python 3.10 o superior** - Lenguaje base para toda la aplicación
+- **Visual Studio Code** - Editor recomendado para desarrollo
+- **Git** - Para control de versiones
+- **Cuenta en Supabase** - Para base de datos y storage en nube
+- **API Key de Google Gemini** - Desde https://aistudio.google.com
+  - Accede a Google AI Studio
+  - Crea una nueva API key para usar Gemini
+  - Necesita cuenta Google
+- **API Key de OpenAI** - Para el chatbot (Chat GPT)
+  - Opcional: Puedes usar otros modelos compatibles
+
+### 📥 Herramientas a Descargar e Instalar
+
+Antes de comenzar, descarga e instala estas herramientas en tu sistema:
+
+1. **Python 3.10+**
+   - Descarga desde: https://www.python.org/downloads/
+   - Asegúrate de marcar "Add Python to PATH" durante la instalación
+   - Verifica: `python --version` en terminal
+
+2. **Visual Studio Code**
+   - Descarga desde: https://code.visualstudio.com/
+   - Recomendado instalar extensión "Python" oficial de Microsoft
+   - Recomendado instalar extensión "Streamlit" para mejor soporte
+
+3. **Git for Windows** (si usas Windows)
+   - Descarga desde: https://git-scm.com/download/win
+   - En macOS/Linux viene preinstalado o instala con tu gestor de paquetes
+
+4. **Obtener API Keys:**
+   - **Google Gemini**: 
+     - Ve a https://aistudio.google.com
+     - Haz clic en "Create API key"
+     - Copia la clave en tu archivo `.env`
+   
+   - **OpenAI (ChatGPT)**:
+     - Ve a https://platform.openai.com/api-keys
+     - Crea una nueva API key
+     - Copia la clave en tu archivo `.env`
+   
+   - **Supabase**:
+     - Ve a https://supabase.com
+     - Crea un proyecto
+     - Copia tu URL y API key en `.env`
 
 ### Instalación
 
@@ -284,8 +398,24 @@ source .venv/bin/activate # macOS/Linux
 pip install -r requirements.txt
 ```
 
+**Dependencias principales instaladas:**
+- `streamlit` - Framework web interactivo
+- `google-generativeai` - API de Gemini para transcripción
+- `supabase` - Cliente para base de datos Supabase
+- `python-dotenv` - Carga de variables de entorno
+- `psycopg2-binary` - Driver PostgreSQL para Supabase
+
 4. **Configurar variables de entorno**
-Crear archivo `.streamlit/secrets.toml`:
+Crear archivo `.env` en la raíz del proyecto (usar `.env.example` como referencia):
+```
+SUPABASE_URL=tu-url-supabase
+SUPABASE_KEY=tu-key-supabase
+GEMINI_API_KEY=tu-api-key-gemini-de-aistudio
+OPENAI_API_KEY=tu-api-key-openai
+LOG_LEVEL=INFO
+```
+
+**O crear archivo `.streamlit/secrets.toml` para Streamlit Cloud:**
 ```toml
 SUPABASE_URL = "tu-url-supabase"
 SUPABASE_KEY = "tu-key-supabase"
@@ -297,6 +427,8 @@ OPENAI_API_KEY = "tu-api-key-openai"
 ```bash
 streamlit run streamlit_app.py
 ```
+
+La aplicación se abrirá en tu navegador en `http://localhost:8501`
 
 ---
 
@@ -326,11 +458,52 @@ streamlit run streamlit_app.py
 2. Haz preguntas sobre el contenido de la reunión
 3. El IA responde basándose en la transcripción
 
+### 4️⃣.A Generar Resumen de la Reunión
+1. Con la transcripción visible, presiona **"📝 Generar Resumen"**
+2. Espera a que Gemini genere el resumen (suele tardar unos segundos)
+3. Verás un resumen profesional con:
+   - **Tema principal** de la reunión
+   - **Puntos clave** discutidos
+   - **Decisiones o acciones** importantes
+4. Puedes copiar el resumen con el botón de copiar integrado
+
+### 4️⃣.B Compartir Transcripción o Resumen
+**Por Email:**
+1. Presiona **"📧 Email"** en la transcripción o resumen
+2. Introduce el email del destinatario (ej: juan@empresa.com)
+3. Presiona **"Abrir Gmail"** (el botón se habilita cuando el email es válido)
+4. Tu cliente de email se abre con el contenido preformulado listo para enviar
+
+**Por WhatsApp:**
+1. Presiona **"💬 WhatsApp"** en la transcripción o resumen
+2. Introduce el número con código país (ej: +34632123456)
+3. Presiona **"Abrir WhatsApp"** (el botón se habilita cuando el número es válido)
+4. WhatsApp Web/App se abre con el contenido listo para enviar
+
+**Validaciones automáticas:**
+- ✅ Email debe contener @ y dominio
+- ✅ Teléfono debe empezar con + y tener al menos 10 dígitos
+- ✅ Botones deshabilitados si el formato es incorrecto
+- ✅ Mensajes de error claros si algo está mal
+
 ### 5️⃣ Gestionar Tickets
 1. Ve a la pestaña **"Gestión en lote"** (en la sección derecha)
 2. Crea tickets desde transcripciones
 3. Establece prioridad y estado
 4. Navega entre pages con los números de página
+
+---
+
+## 💡 Ejemplo Completo: De la Reunión a WhatsApp
+
+**Paso 1:** Grabas una reunión de 30 minutos  
+**Paso 2:** Presionas "Transcribir" → La IA identifica a todos los hablantes  
+**Paso 3:** Presionas "Generar Resumen" → Obtienes un resumen de 2 minutos  
+**Paso 4:** Presionas "💬 WhatsApp" en el resumen  
+**Paso 5:** Escribes el número de tu jefe (+34612345678)  
+**Paso 6:** Presionas "Abrir WhatsApp" → ¡Se abre WhatsApp con el resumen listo para enviar!
+
+**Todo en menos de 5 minutos, sin configuraciones complicadas.**
 
 ---
 
@@ -424,6 +597,64 @@ python-dotenv>=1.0.0        # Variables de entorno
 ```
 
 Ver `requirements.txt` para lista completa.
+
+
+---
+
+## 🛠️ Stack Tecnológico Detallado
+
+### Lenguaje de Programación
+- **Python 3.10+** - Lenguaje principal
+  - https://www.python.org/
+  - Potente, versátil, con excelentes librerías para IA
+
+### Framework Frontend
+- **Streamlit 1.32.0** - Interfaz web interactiva
+  - https://streamlit.io/
+  - Permite crear dashboards web sin HTML/CSS básico
+  - Hot reload en desarrollo
+  - Excelente para prototipado rápido
+
+### APIs de IA
+- **Google Generative AI (Gemini)** - Transcripción y análisis
+  - https://aistudio.google.com/ - Acceso a la API
+  - Modelo: `gemini-1.5-flash` (rápido, económico)
+  - Modelo: `gemini-1.5-pro` (más potente)
+  - Usado para: Transcripción, diarización, generación de resúmenes
+
+- **OpenAI (ChatGPT)** - Chatbot para análisis
+  - https://platform.openai.com/
+  - Modelo: `gpt-3.5-turbo` o `gpt-4-turbo`
+  - Usado para: Chat assistant, preguntas sobre transcripciones
+
+### Base de Datos
+- **Supabase** - PostgreSQL + Storage
+  - https://supabase.com/
+  - Base de datos relacional (PostgreSQL)
+  - Storage en nube para archivos de audio
+  - Autenticación incluida
+  - Alternativa open-source a Firebase
+
+### Herramientas de Desarrollo
+- **Visual Studio Code** - Editor recomendado
+  - https://code.visualstudio.com/
+  - Extensión: Python (Microsoft)
+  - Extensión: Streamlit
+
+- **Git** - Control de versiones
+  - https://git-scm.com/
+
+- **Python venv** - Entorno virtual
+  - Aislamiento de dependencias por proyecto
+
+### Dependencias Python Principales
+| Paquete | Versión | Propósito |
+|---------|---------|----------|
+| streamlit | 1.32.0 | Framework web |
+| google-generativeai | 0.8.6 | API Gemini |
+| supabase | latest | Cliente base datos |
+| python-dotenv | 1.0.0 | Variables de entorno |
+| psycopg2-binary | latest | Driver PostgreSQL |
 
 ---
 
