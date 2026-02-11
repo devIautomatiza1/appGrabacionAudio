@@ -464,23 +464,19 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
     st.markdown(f'''
     <div style="
         position: fixed;
-        top: 20px;
+        bottom: 20px;
         left: 20px;
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        padding: 12px 16px;
-        border-radius: 10px;
-        border-left: 3px solid #00d9ff;
-        box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
+        background: #0a1929;
+        padding: 10px 14px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         z-index: 999;
-        max-width: 280px;
+        max-width: 240px;
     ">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 18px;">🎙️</span>
-            <div style="flex: 1; min-width: 0;">
-                <div style="font-size: 10px; color: #00d9ff; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">AUDIO ACTIVO</div>
-                <div style="font-size: 13px; font-weight: 700; color: white; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{selected_audio_name}</div>
-            </div>
-            <span style="width: 8px; height: 8px; background: #00ff00; border-radius: 50%; animation: pulse 1.5s infinite; flex-shrink: 0;"></span>
+        <div style="font-size: 12px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;">{selected_audio_name}</div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #00ff00;">
+            <span style="width: 6px; height: 6px; background: #00ff00; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
+            en línea
         </div>
     </div>
     <style>
