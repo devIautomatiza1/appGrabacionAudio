@@ -53,10 +53,11 @@ class InputValidator:
         if len(filename) == 0:
             return False, "Nombre de archivo vacío"
         
-        # Verificar extensión
-        ext = filename.lower().split('.')[-1] if '.' in filename else ''
-        if ext not in InputValidator.ALLOWED_EXTENSIONS:
-            return False, f"Extensión no permitida. Usa: {', '.join(InputValidator.ALLOWED_EXTENSIONS)}"
+        # Verificar extensión SOLO si tiene punto
+        if '.' in filename:
+            ext = filename.lower().split('.')[-1]
+            if ext not in InputValidator.ALLOWED_EXTENSIONS:
+                return False, f"Extensión no permitida. Usa: {', '.join(InputValidator.ALLOWED_EXTENSIONS)}"
         
         # Verificar caracteres peligrosos
         if not InputValidator.SAFE_FILENAME_PATTERN.match(filename):
