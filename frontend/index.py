@@ -458,28 +458,29 @@ st.markdown("")
 # SECCIÓN DE TRANSCRIPCIÓN
 
 if st.session_state.get("chat_enabled", False) and st.session_state.get("contexto"):
-    # Indicador visual del audio activo
+    # Indicador visual del audio activo (fixed)
     selected_audio_name = st.session_state.get('selected_audio', 'audio')
     
     st.markdown(f'''
     <div style="
+        position: fixed;
+        top: 20px;
+        left: 20px;
         background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        padding: 16px 20px;
-        border-radius: 12px;
-        border-left: 4px solid #00d9ff;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 12px rgba(0, 217, 255, 0.2);
+        padding: 12px 16px;
+        border-radius: 10px;
+        border-left: 3px solid #00d9ff;
+        box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
+        z-index: 999;
+        max-width: 280px;
     ">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 24px;">🎙️</span>
-            <div>
-                <div style="font-size: 12px; color: #00d9ff; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">AUDIO ACTIVO</div>
-                <div style="font-size: 18px; font-weight: 700; color: white; margin-top: 4px;">{selected_audio_name}</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 18px;">🎙️</span>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 10px; color: #00d9ff; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">AUDIO ACTIVO</div>
+                <div style="font-size: 13px; font-weight: 700; color: white; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{selected_audio_name}</div>
             </div>
-            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
-                <span style="width: 10px; height: 10px; background: #00ff00; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
-                <span style="color: #00ff00; font-weight: 600; font-size: 12px;">EN LÍNEA</span>
-            </div>
+            <span style="width: 8px; height: 8px; background: #00ff00; border-radius: 50%; animation: pulse 1.5s infinite; flex-shrink: 0;"></span>
         </div>
     </div>
     <style>
