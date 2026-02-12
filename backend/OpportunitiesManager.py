@@ -245,6 +245,7 @@ class OpportunitiesManager:
     ) -> Tuple[int, List[Dict]]:
         """
         Análisis inteligente de oportunidades usando Gemini.
+        Detección de intenciones y conceptos, no solo palabras clave exactas.
         
         Args:
             transcription: Texto completo de la transcripción
@@ -279,43 +280,52 @@ class OpportunitiesManager:
             
             speakers_list = ", ".join(speakers.keys())
             
-            prompt = f"""Eres un Analista Empresarial Experto. Analiza esta transcripción de reunión buscando INTENCIONES y CONCEPTOS, no solo palabras clave exactas.
+            # Limitar transcripción a 10000 caracteres para evitar límites de Gemini
+            transcription_limited = transcription[:10000] if len(transcription) > 10000 else transcription
+            if len(transcription) > 10000:
+                logger.info(f"Transcription truncated from {len(transcription)} to 10000 chars")
+            
+            prompt = f"""Eres un Analista Empresarial Experto en análisis de reuniones. Tu tarea es detectar INTENCIONES Y CONCEPTOS, no solo palabras clave exactas.
 
-TEMAS A BUSCAR:
+===== TEMAS A BUSCAR =====
 {temas_list}
 
-TRANSCRIPCIÓN:
-{transcription}
+===== TRANSCRIPCIÓN A ANALIZAR =====
+{transcription_limited}
 
-PARTICIPANTES: {speakers_list}
+===== PARTICIPANTES EN LA REUNIÓN =====
+{speakers_list}
 
-INSTRUCCIONES CRÍTICAS:
-1. Busca INTENCIONES detrás de las palabras, no solo coincidencias textuales
-2. Si alguien dice "Necesitamos recursos para el proyecto" → Busca "Infraestructura" o "Acción requerida"
-3. Si detectas algo relacionado con los temas listados, DEBES reportarlo
-4. Para cada oportunidad detectada incluye el quién lo dijo basado en los participantes
-5. Devuelve SOLO JSON válido, sin explicaciones adicionales
+===== INSTRUCCIONES CRÍTICAS =====
+1. NO busques solo coincidencias textuales exactas
+2. Busca INTENCIONES detrás de las palabras
+3. Ejemplo: "Necesitamos recursos para el proyecto" → Busca "Infraestructura" o "Acción requerida"
+4. Si detectas algo relacionado con los temas, DEBES reportarlo
+5. Para cada oportunidad, identifica quién lo dijo usando los participantes
+6. Devuelve SOLO JSON válido, sin explicaciones adicionales
 
-FORMATO DE RESPUESTA (JSON):
+===== FORMATO DE RESPUESTA (SOLO JSON) =====
 {{
   "oportunidades": [
     {{
-      "tema": "Nombre del tema exacto del diccionario",
-      "prioridad": "high/medium/low",
+      "tema": "Nombre exacto del tema del diccionario",
+      "prioridad": "high|medium|low",
       "mencionado_por": "Nombre del participante",
-      "contexto": "La frase exacta o parafraseo del contexto",
+      "contexto": "La frase exacta con contexto",
       "confianza": 0.95
     }}
   ]
 }}
 
-Si no encuentras oportunidades, devuelve: {{"oportunidades": []}}"""
+Si no encuentras oportunidades: {{"oportunidades": []}}"""
             
             # Llamar a Gemini
-            logger.debug(f"Sending analysis to Gemini...")
+            logger.debug(f"Iniciando análisis con Gemini para {audio_filename}...")
             model = genai.GenerativeModel(config.get("modelo_gemini", "gemini-1.5-flash"))
             response = model.generate_content(prompt)
             response_text = response.text.strip()
+            
+            logger.debug(f"Respuesta Gemini recibida: {len(response_text)} caracteres")
             
             # Remover markdown code blocks si existen
             if response_text.startswith("```"):
@@ -330,40 +340,54 @@ Si no encuentras oportunidades, devuelve: {{"oportunidades": []}}"""
             try:
                 response_json = json.loads(response_text)
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse Gemini response as JSON: {str(e)[:100]}")
-                logger.debug(f"Response was: {response_text[:500]}")
+                logger.error(f"Error parsing Gemini response: {str(e)[:100]}")
+                logger.debug(f"Response text: {response_text[:300]}")
                 return 0, []
             
             oportunidades_data = response_json.get("oportunidades", [])
             if not oportunidades_data:
-                logger.info("No opportunities detected by AI")
+                logger.info(f"✓ No opportunities detected by AI for {audio_filename}")
                 return 0, []
+            
+            logger.info(f"IA detectó {len(oportunidades_data)} oportunidades potenciales")
             
             # Obtener recording_id
             recording_id = self.get_recording_id(audio_filename)
             if not recording_id:
-                logger.warning(f"Recording ID not found for {audio_filename}, cannot save opportunities")
+                logger.warning(f"Recording ID not found for {audio_filename}")
                 return 0, []
             
             # Guardar cada oportunidad en Supabase
             saved_opportunities = []
-            for opp in oportunidades_data:
+            for idx, opp in enumerate(oportunidades_data, 1):
                 try:
                     # Validar confianza mínima
-                    confianza = opp.get("confianza", 0.7)
-                    min_confianza = config.get("minimo_confianza", 0.7)
+                    confianza = float(opp.get("confianza", 0.7))
+                    min_confianza = float(config.get("minimo_confianza", 0.7))
+                    
                     if confianza < min_confianza:
-                        logger.debug(f"Skipping opportunity with low confidence: {confianza}")
+                        logger.debug(f"Opportunity {idx}: Confianza {confianza:.2f} < {min_confianza:.2f}, skipped")
                         continue
                     
-                    # Construir nota
-                    tema = opp.get("tema", "Unknown")
-                    mencionado_por = opp.get("mencionado_por", "Unknown")
-                    contexto = opp.get("contexto", "")
+                    # Validar que el tema existe en el diccionario
+                    tema = opp.get("tema", "").strip()
+                    if tema not in temas:
+                        logger.warning(f"Opportunity {idx}: Tema '{tema}' not in dictionary, skipped")
+                        continue
                     
-                    note = f"Ticket generado automáticamente por IA tras detectar una intención relacionada con el concepto '{tema}' del diccionario corporativo.\n\nMencionado por: {mencionado_por}\nContexto: {contexto}"
+                    mencionado_por = opp.get("mencionado_por", "Unknown").strip()
+                    contexto = opp.get("contexto", "").strip()
                     
-                    # Preparar datos para Supabase
+                    # Construir nota descriptiva
+                    tema_data = temas.get(tema, {})
+                    nota = f"🤖 Ticket generado automáticamente por IA\n\n"
+                    nota += f"Concepto detectado: {tema}\n"
+                    nota += f"Descripción: {tema_data.get('descripcion', '')}\n\n"
+                    nota += f"Mencionado por: {mencionado_por}\n"
+                    nota += f"Contexto: {contexto}\n"
+                    nota += f"Confianza: {confianza:.0%}"
+                    
+                    # Mapear prioridades
                     priority_map = {
                         "high": "High",
                         "medium": "Medium",
@@ -372,11 +396,11 @@ Si no encuentras oportunidades, devuelve: {{"oportunidades": []}}"""
                     
                     opportunity_data = {
                         "recording_id": recording_id,
-                        "title": tema,
+                        "title": f"{tema} - {mencionado_por}",
                         "description": contexto,
                         "status": "new",
-                        "priority": priority_map.get(opp.get("prioridad", "medium"), "Medium"),
-                        "notes": note,
+                        "priority": priority_map.get(opp.get("prioridad", "medium").lower(), "Medium"),
+                        "notes": nota,
                         "created_at": datetime.now().isoformat(),
                         "mencionado_por": mencionado_por
                     }
@@ -386,16 +410,21 @@ Si no encuentras oportunidades, devuelve: {{"oportunidades": []}}"""
                         result = self.db.table("opportunities").insert(opportunity_data).execute()
                         if result.data:
                             opp_id = result.data[0].get("id")
-                            logger.info(f"✓ AI-Detected opportunity saved: {opp_id} ({tema})")
+                            logger.info(f"✅ Oportunidad {idx} guardada: {opp_id} ({tema})")
                             saved_opportunities.append(result.data[0])
+                        else:
+                            logger.warning(f"Oportunidad {idx}: Empty response from Supabase")
+                    else:
+                        logger.warning("DB unavailable, opportunity not saved")
                 
                 except Exception as inner_e:
-                    logger.error(f"Error saving individual opportunity: {type(inner_e).__name__} - {str(inner_e)}")
+                    logger.error(f"Error guardando oportunidad {idx}: {type(inner_e).__name__} - {str(inner_e)}")
                     continue
             
-            logger.info(f"✓ AI Analysis complete: {len(saved_opportunities)} opportunities detected")
+            logger.info(f"✅ Análisis completado: {len(saved_opportunities)}/{len(oportunidades_data)} oportunidades guardadas")
             return len(saved_opportunities), saved_opportunities
         
         except Exception as e:
-            logger.error(f"analyze_opportunities_with_ai: {type(e).__name__} - {str(e)}")
+            logger.error(f"analyze_opportunities_with_ai error: {type(e).__name__} - {str(e)}")
             return 0, []
+

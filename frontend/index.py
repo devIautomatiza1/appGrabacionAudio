@@ -257,17 +257,59 @@ with col_right:
                                 show_success("Transcripción completada")
                                 add_debug_event(f"Transcripción completada para '{selected_audio}' (ID: {transcription_id})", "success")
                                 
-                                # === ANÁLISIS DE OPORTUNIDADES CON IA ===
-                                with st.spinner("Analizando oportunidades con IA..."):
-                                    opportunities_manager = OpportunitiesManager()
-                                    num_opportunities, detected_opps = opportunities_manager.analyze_opportunities_with_ai(
-                                        transcription=transcription.text,
-                                        audio_filename=selected_audio
-                                    )
-                                    
+                                # === ANÁLISIS AUTOMÁTICO DE OPORTUNIDADES CON IA ===
+                                analysis_placeholder = st.empty()
+                                with analysis_placeholder.container():
+                                    st.markdown('''
+                                    <div style="
+                                        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+                                        border: 2px solid rgba(139, 92, 246, 0.3);
+                                        border-radius: 12px;
+                                        padding: 16px;
+                                        margin: 12px 0;
+                                        text-align: center;
+                                    ">
+                                        <div style="font-size: 14px; font-weight: 600; color: #8b5cf6; margin-bottom: 8px;">
+                                            🤖 Generando Tickets Automáticamente...
+                                        </div>
+                                        <div style="font-size: 12px; color: #60a5fa;">
+                                            Analizando intenciones y oportunidades con IA
+                                        </div>
+                                    </div>
+                                    ''', unsafe_allow_html=True)
+                                
+                                opportunities_manager = OpportunitiesManager()
+                                num_opportunities, detected_opps = opportunities_manager.analyze_opportunities_with_ai(
+                                    transcription=transcription.text,
+                                    audio_filename=selected_audio
+                                )
+                                
+                                # Actualizar el indicador con los resultados
+                                with analysis_placeholder.container():
                                     if num_opportunities > 0:
+                                        st.markdown(f'''
+                                        <div style="
+                                            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+                                            border: 2px solid rgba(34, 197, 94, 0.3);
+                                            border-radius: 12px;
+                                            padding: 16px;
+                                            margin: 12px 0;
+                                            text-align: center;
+                                        ">
+                                            <div style="font-size: 14px; font-weight: 600; color: #22c55e; margin-bottom: 8px;">
+                                                ✅ Análisis Completado
+                                            </div>
+                                            <div style="font-size: 13px; color: #86efac; font-weight: 500;">
+                                                Se han generado {num_opportunities} ticket(s) automáticamente
+                                            </div>
+                                            <div style="font-size: 11px; color: #4ade80; margin-top: 6px;">
+                                                Los tickets están disponibles en la sección de "Oportunidades"
+                                            </div>
+                                        </div>
+                                        ''', unsafe_allow_html=True)
+                                        
                                         st.toast(
-                                            f"✅ Análisis de IA completado: Se han detectado {num_opportunities} nuevas oportunidades.",
+                                            f"✅ Se detectaron {num_opportunities} oportunidades. Los tickets han sido creados automáticamente.",
                                             icon="🤖"
                                         )
                                         add_debug_event(
@@ -275,8 +317,26 @@ with col_right:
                                             "success"
                                         )
                                     else:
+                                        st.markdown('''
+                                        <div style="
+                                            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+                                            border: 2px solid rgba(59, 130, 246, 0.3);
+                                            border-radius: 12px;
+                                            padding: 16px;
+                                            margin: 12px 0;
+                                            text-align: center;
+                                        ">
+                                            <div style="font-size: 14px; font-weight: 600; color: #3b82f6; margin-bottom: 8px;">
+                                                ℹ️ Análisis Completado
+                                            </div>
+                                            <div style="font-size: 13px; color: #93c5fd;">
+                                                No se detectaron nuevas oportunidades en esta transcripción
+                                            </div>
+                                        </div>
+                                        ''', unsafe_allow_html=True)
+                                        
                                         st.toast(
-                                            "ℹ️ Análisis de IA completado: No se detectaron nuevas oportunidades.",
+                                            "ℹ️ Análisis completado: No se detectaron oportunidades relevantes.",
                                             icon="ℹ️"
                                         )
                                         add_debug_event(
