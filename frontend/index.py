@@ -45,6 +45,7 @@ def initialize_session_state(recorder_obj: AudioRecorder) -> None:
     session_defaults = {
         "processed_audios": set(),
         "recordings": recorder_obj.get_recordings_from_supabase(),
+        "recordings_map": {},  # Mapeo: filename → recording_id para análisis de oportunidades
         "selected_audio": None,
         "upload_key_counter": 0,
         "record_key_counter": 0,
@@ -82,6 +83,31 @@ def add_debug_event(message: str, event_type: str = "info") -> None:
         "type": event_type,
         "message": message
     })
+
+def update_recordings_map() -> None:
+    """Actualiza el mapeo de filename → recording_id desde Supabase"""
+    try:
+        from supabase import create_client
+        supabase_url = st.secrets.get("SUPABASE_URL")
+        supabase_key = st.secrets.get("SUPABASE_KEY")
+        
+        if not supabase_url or not supabase_key:
+            logger.warning("⚠️  Supabase credentials no configuradas")
+            return
+        
+        client = create_client(supabase_url.strip(), supabase_key.strip())
+        response = client.table("recordings").select("id, filename").order("created_at", desc=True).limit(50).execute()
+        
+        if response and response.data:
+            recordings_map = {rec["filename"]: rec["id"] for rec in response.data}
+            st.session_state.recordings_map = recordings_map
+            logger.info(f"✅ Recordings map actualizado: {len(recordings_map)} registros")
+            logger.debug(f"   Ejemplos: {list(recordings_map.keys())[:3]}")
+        else:
+            logger.warning("⚠️  No se obtuvieron recordings de Supabase")
+            st.session_state.recordings_map = {}
+    except Exception as e:
+        logger.error(f"❌ Error actualizando recordings_map: {type(e).__name__} - {str(e)[:100]}")
 
 # ============================================================================
 # CONFIGURACIÓN INICIAL DE LA INTERFAZ DE USUARIO
@@ -161,6 +187,9 @@ with col_right:
     # Refresh de la lista de audios
     recordings = recorder.get_recordings_from_supabase()
     st.session_state.recordings = recordings
+    
+    # Actualizar mapeo de IDs para análisis de oportunidades
+    update_recordings_map()
     
     if recordings:
         # Tabs para diferentes secciones
@@ -280,22 +309,31 @@ with col_right:
                                 
                                 opportunities_manager = OpportunitiesManager()
                                 
-                                logger.info(f"[STREAMLIT] Llamando analyze_opportunities_with_ai")
-                                logger.info(f"[STREAMLIT] transcription.text: {str(transcription.text)[:100]}...")
-                                logger.info(f"[STREAMLIT] audio_filename: {selected_audio}")
+                                # Obtener recording_id del mapeo
+                                recordings_map = st.session_state.get("recordings_map", {})
+                                rec_id = recordings_map.get(selected_audio)
+                                
+                                logger.info(f"[STREAMLIT] ========== ANÁLISIS DE IA INICIADO ==========")
+                                logger.info(f"[STREAMLIT] selected_audio: '{selected_audio}'")
+                                logger.info(f"[STREAMLIT] recordings_map keys: {list(recordings_map.keys())[:3]}...")
+                                logger.info(f"[STREAMLIT] recording_id obtenido: {rec_id}")
+                                logger.info(f"[STREAMLIT] transcription length: {len(transcription.text)} chars")
                                 
                                 try:
                                     num_opportunities, detected_opps = opportunities_manager.analyze_opportunities_with_ai(
                                         transcription=transcription.text,
-                                        audio_filename=selected_audio
+                                        audio_filename=selected_audio,
+                                        recording_id=rec_id
                                     )
-                                    logger.info(f"[STREAMLIT] Resultado: {num_opportunities} detectadas, {len(detected_opps) if detected_opps else 0} guardadas")
+                                    logger.info(f"[STREAMLIT] ✅ Análisis completado")
+                                    logger.info(f"[STREAMLIT] Detectadas: {num_opportunities} | Guardadas: {len(detected_opps) if detected_opps else 0}")
                                 except Exception as analysis_error:
-                                    logger.error(f"[STREAMLIT] ERROR en analyze_opportunities_with_ai: {type(analysis_error).__name__} - {str(analysis_error)}")
+                                    logger.error(f"[STREAMLIT] ❌ ERROR: {type(analysis_error).__name__}")
+                                    logger.error(f"[STREAMLIT]    {str(analysis_error)}")
                                     num_opportunities = 0
                                     detected_opps = []
                                 
-                                logger.info(f"[STREAMLIT] num_opportunities={num_opportunities}, detected_opps={detected_opps}")
+                                logger.info(f"[STREAMLIT] ========== FIN DEL ANÁLISIS ==========\n")
                                 
                                 # Actualizar el indicador con los resultados
                                 with analysis_placeholder.container():

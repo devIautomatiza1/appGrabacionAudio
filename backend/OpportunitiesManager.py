@@ -27,18 +27,45 @@ class OpportunitiesManager:
         self.db = init_supabase()
     
     def get_recording_id(self, filename: str) -> Optional[str]:
-        """Obtiene ID del recording"""
+        """Obtiene ID del recording - intenta múltiples variaciones del nombre"""
         try:
             if not self.db:
                 logger.warning(f"DB unavailable: {filename}")
                 return None
+            
+            # Intentar búsqueda directa
             result = self.db.table("recordings").select("id").eq("filename", filename).execute()
-            recording_id = result.data[0]["id"] if result.data else None
-            if recording_id:
-                logger.debug(f"Recording ID: {recording_id}")
-            else:
-                logger.warning(f"Recording not found: {filename}")
-            return recording_id
+            if result.data:
+                recording_id = result.data[0]["id"]
+                logger.info(f"✅ Recording encontrado (búsqueda exacta): {recording_id}")
+                return recording_id
+            
+            # Si no encuentra, intentar variaciones
+            logger.warning(f"No encontrado exacto: {filename}, probando variaciones...")
+            
+            # Variación 1: Buscar por nombre sin extensión
+            filename_no_ext = filename.rsplit('.', 1)[0] if '.' in filename else filename
+            result = self.db.table("recordings").select("id").eq("filename", filename_no_ext).execute()
+            if result.data:
+                recording_id = result.data[0]["id"]
+                logger.info(f"✅ Recording encontrado (sin extensión): {recording_id}")
+                return recording_id
+            
+            # Variación 2: Obtener todos los recordings y buscar por coincidencia parcial
+            try:
+                all_recordings = self.db.table("recordings").select("id, filename").order("created_at", desc=True).limit(20).execute()
+                if all_recordings.data:
+                    main_part = filename.split(" - ")[0].strip() if " - " in filename else filename_no_ext[:20]
+                    for rec in all_recordings.data:
+                        if main_part.lower() in rec["filename"].lower():
+                            recording_id = rec["id"]
+                            logger.info(f"✅ Recording encontrado (coincidencia parcial): {recording_id} ({rec['filename']})")
+                            return recording_id
+            except Exception as search_error:
+                logger.debug(f"Búsqueda por coincidencia falló: {search_error}")
+            
+            logger.error(f"❌ Recording no encontrado con ninguna variación: {filename}")
+            return None
         except Exception as e:
             logger.error(f"get_recording_id: {type(e).__name__} - {str(e)}")
             return None
@@ -120,19 +147,26 @@ class OpportunitiesManager:
     def load_opportunities(self, audio_filename: str) -> List[Dict]:
         """Carga oportunidades desde BD/local"""
         try:
+            logger.info(f"📂 Cargando oportunidades para: {audio_filename}")
+            
             if not self.db:
                 logger.warning(f"BD unavailable, loading local: {audio_filename}")
                 return self._load_local(audio_filename)
             
+            # Obtener recording_id
             recording_id = self.get_recording_id(audio_filename)
             if not recording_id:
-                logger.warning(f"Recording ID not found, fallback local")
+                logger.warning(f"⚠️  Recording ID no encontrado para '{audio_filename}', fallback local")
                 return self._load_local(audio_filename)
             
+            logger.info(f"🔍 Buscando opportunities con recording_id: {recording_id}")
             result = self.db.table("opportunities").select("*").eq("recording_id", recording_id).execute()
+            
             if not result.data:
-                logger.debug(f"No opportunities found for: {audio_filename}")
+                logger.warning(f"❌ No opportunities encontradas para recording_id: {recording_id}")
                 return []
+            
+            logger.info(f"✅ Encontradas {len(result.data)} opportunities")
             
             opportunities = [{
                 "id": r.get("id"),
@@ -146,11 +180,13 @@ class OpportunitiesManager:
                 "occurrence": 1
             } for r in result.data]
             
-            logger.info(f"✓ Loaded {len(opportunities)} opportunities")
+            logger.info(f"✓ Cargadas {len(opportunities)} opportunities")
             return opportunities
         
         except Exception as e:
             logger.error(f"load_opportunities: {type(e).__name__} - {str(e)}")
+            import traceback
+            logger.debug(traceback.format_exc())
             return self._load_local(audio_filename)
     
     def _load_local(self, audio_filename: str) -> List[Dict]:
@@ -241,7 +277,8 @@ class OpportunitiesManager:
     def analyze_opportunities_with_ai(
         self, 
         transcription: str, 
-        audio_filename: str
+        audio_filename: str,
+        recording_id: str = None
     ) -> Tuple[int, List[Dict]]:
         """
         Análisis inteligente de oportunidades usando Gemini.
@@ -250,6 +287,8 @@ class OpportunitiesManager:
         Args:
             transcription: Texto completo de la transcripción
             audio_filename: Nombre del archivo de audio para asociar la oportunidad
+            recording_id: (Opcional) ID del recording en Supabase. Si se proporciona, se usa directamente.
+                         Si no, se intenta obtener buscando por audio_filename.
         
         Returns:
             Tuple con (número de oportunidades detectadas, lista de oportunidades)
@@ -358,16 +397,44 @@ Si no hay oportunidades: {{"analisis_completo": true, "oportunidades": []}}"""
                 logger.info(f"Análisis completado: 0 oportunidades detectadas")
                 return 0, []
             
-            # Obtener recording_id
-            recording_id = self.get_recording_id(audio_filename)
+            # Obtener recording_id: usar el pasado como parámetro o buscar por nombre
+            recording_id = recording_id or self.get_recording_id(audio_filename)
             
-            # Si no hay recording_id en BD, retornar las oportunidades detectadas al menos
-            # (aunque no se puedan guardar en BD)
+            logger.info(f"Recording ID obtenido: {recording_id}")
+            
+            # Si no hay recording_id, intentar crear uno
             if not recording_id:
-                logger.warning(f"Recording ID not found, cannot save to DB but IA detected {len(oportunidades_data)} opportunities")
-                # Retornar el número de oportunidades detectadas para mostrar feedback al usuario
-                # aunque no se guarden en BD
+                logger.warning(f"⚠️  Recording ID no encontrado para {audio_filename}, intentando crear...")
+                try:
+                    if not self.db:
+                        logger.error(f"❌ DB no disponible para crear recording")
+                    else:
+                        # Crear un registro en la tabla recordings
+                        new_recording = {
+                            "filename": audio_filename,
+                            "created_at": datetime.now().isoformat(),
+                            "file_size_mb": 0.0,
+                            "duration_seconds": 0,
+                            "filepath": "",
+                            "transcription": None
+                        }
+                        logger.info(f"Creando recording con filename: {audio_filename}")
+                        result = self.db.table("recordings").insert(new_recording).execute()
+                        if result.data and len(result.data) > 0:
+                            recording_id = result.data[0].get("id")
+                            logger.info(f"✅ Recording creado exitosamente: {recording_id}")
+                        else:
+                            logger.error(f"❌ Respuesta vacía al crear recording")
+                except Exception as create_error:
+                    logger.error(f"❌ Error al crear recording: {type(create_error).__name__} - {str(create_error)[:150]}")
+            
+            # Si aún no hay recording_id, no se puede guardar
+            if not recording_id:
+                logger.error(f"❌ No recording_id disponible después de intentos, no se guardarán las {len(oportunidades_data)} oportunidades")
                 return len(oportunidades_data), []
+            
+            logger.info(f"✅ Usando recording_id para guardar oportunidades: {recording_id}")
+            logger.info(f"📊 Total de oportunidades a guardar: {len(oportunidades_data)}")
             
             # Guardar cada oportunidad
             saved_opportunities = []
@@ -379,19 +446,21 @@ Si no hay oportunidades: {{"analisis_completo": true, "oportunidades": []}}"""
                     confianza = float(opp.get("confianza", 0.8))
                     prioridad_str = str(opp.get("prioridad", "medium")).lower().strip()
                     
+                    logger.debug(f"Opp {idx}: tema='{tema}', by='{mencionado_por}', conf={confianza:.2f}")
+                    
                     # Validar tema
                     if tema not in temas:
-                        logger.warning(f"Tema '{tema}' no está en diccionario. Temas válidos: {list(temas.keys())}")
+                        logger.warning(f"❌ Opp {idx}: Tema '{tema}' NO está en diccionario. Temas válidos: {list(temas.keys())}")
                         continue
                     
                     # Validar confianza
                     min_confianza = float(config.get("minimo_confianza", 0.5))
                     if confianza < min_confianza:
-                        logger.debug(f"Opp {idx}: Confianza {confianza:.2f} < {min_confianza:.2f}")
+                        logger.debug(f"⏭️  Opp {idx}: Confianza {confianza:.2f} < {min_confianza:.2f}, saltando")
                         continue
                     
                     if not contexto:
-                        logger.warning(f"Opp {idx}: Sin contexto")
+                        logger.warning(f"❌ Opp {idx}: Sin contexto, saltando")
                         continue
                     
                     # Mapear prioridades
@@ -418,33 +487,38 @@ Si no hay oportunidades: {{"analisis_completo": true, "oportunidades": []}}"""
                         "mencionado_por": mencionado_por
                     }
                     
+                    logger.debug(f"Opp {idx}: Datos preparados para insertar")
+                    
                     # Insertar en Supabase
-                    if self.db:
-                        result = self.db.table("opportunities").insert(opportunity_data).execute()
-                        if result.data:
-                            opp_id = result.data[0].get("id")
-                            logger.info(f"✅ Opp {idx} guardada: {opp_id} (Tema: {tema}, Por: {mencionado_por})")
-                            saved_opportunities.append(result.data[0])
-                        else:
-                            logger.warning(f"Opp {idx}: Respuesta vacía de Supabase")
+                    if not self.db:
+                        logger.error(f"❌ Opp {idx}: DB no disponible")
+                        continue
+                    
+                    logger.debug(f"Opp {idx}: Iniciando insert en tabla opportunities...")
+                    result = self.db.table("opportunities").insert(opportunity_data).execute()
+                    
+                    if result.data and len(result.data) > 0:
+                        opp_id = result.data[0].get("id")
+                        logger.info(f"✅ Opp {idx} guardada: {opp_id} | Tema: {tema} | Por: {mencionado_por}")
+                        saved_opportunities.append(result.data[0])
                     else:
-                        logger.warning("DB no disponible")
-                
+                        logger.error(f"❌ Opp {idx}: Respuesta vacía de Supabase")
+                        logger.error(f"   Respuesta: {result}")
+                    
                 except Exception as inner_e:
-                    logger.error(f"Error guardando opp {idx}: {type(inner_e).__name__} - {str(inner_e)}")
+                    logger.error(f"❌ Opp {idx}: Error {type(inner_e).__name__} - {str(inner_e)[:150]}")
+                    import traceback
+                    logger.debug(f"   Traceback: {traceback.format_exc()}")
             
             total = len(saved_opportunities)
             total_detectadas = len(oportunidades_data)
-            logger.info(f"ANÁLISIS COMPLETADO: {total} guardadas / {total_detectadas} detectadas")
+            logger.info(f"🎯 ANÁLISIS COMPLETADO: {total} guardadas / {total_detectadas} detectadas")
             
             # Retornar total detectadas (para mostrar feedback), y las guardadas (si existen)
             return total_detectadas, saved_opportunities
         
         except Exception as e:
             logger.error(f"analyze_opportunities_with_ai error: {type(e).__name__} - {str(e)}")
-            import traceback
-            logger.error(traceback.format_exc())
-            return 0, []
             import traceback
             logger.error(traceback.format_exc())
             return 0, []
