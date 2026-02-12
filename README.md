@@ -52,6 +52,14 @@
   Voz 3: "Todo correcto."
   ```
 
+### 🎨 Visualización Colorida de Transcripciones
+- **Cada hablante tiene su propio color único** - Fácil de distinguir personas en la conversación
+- **Paleta de 12 colores vibrantes**: Rojo coral, Turquesa, Azul cielo, Verde menta, Púrpura, Amarillo dorado, etc.
+- **Sistema de expansión/colapso**: Muestra primeras 5 líneas, luego botón "Mostrar más" para ver todo
+- **Diseño glassmorphism**: Línea de color a la izquierda + fondo semi-transparente
+- **Muy legible**: Contraste perfecto para fondo oscuro
+- **Botón dinámico**: Indica cuántas líneas restantes hay ("Mostrar más 18 líneas restantes")
+
 ### 🤖 Asistente IA
 - **Chatbot inteligente** basado en GPT para analizar transcripciones
 - Haz preguntas sobre el contenido de tus reuniones
@@ -581,6 +589,46 @@ La aplicación se abrirá en tu navegador en `http://localhost:8501`
    - 🤖 **Análisis automático de oportunidades** (sin hacer nada adicional)
    - 📧 Opciones de compartir por Email/WhatsApp
    - 💬 Panel de chat para preguntas sobre el contenido
+
+#### 🎨 Visualización Mejorada de la Transcripción
+
+La transcripción ahora se muestra con un **diseño colorido y legible**:
+
+**✨ Características:**
+- 🎭 **Cada persona tiene un color único y diferente** - Rojo coral, Turquesa, Azul cielo, Verde menta, Púrpura, Amarillo dorado, etc.
+- 📖 **Líneas coloreadas**: El nombre del hablante aparece en su color asignado con **negrita**
+- 📱 **Borde izquierdo de color**: Cada intervención tiene una línea de color a la izquierda para mejor distinción
+- 🎯 **Fondo semi-transparente**: Efecto glassmorphism para mejor contraste
+
+**Ejemplo visual:**
+```
+┌─────────────────────────────────────────────────────┐
+│ Fran:    "Hola, me presento, soy Fran..."  (Rojo)  │
+│                                                     │
+│ Mónica:  "Pues que hay muchísimos chat..."(Turquesa)│
+│                                                     │
+│ Jaime:   "Yo soy Jaime y pienso que..."   (Azul)   │
+└─────────────────────────────────────────────────────┘
+```
+
+#### 📖 Sistema de Expansión/Colapso
+
+Para transcripciones largas, el sistema muestra **primeras 5 líneas por defecto**:
+
+**Comportamiento:**
+1. **Visualización inicial**: Se muestran las 5 primeras líneas de la transcripción
+2. **Botón "📖 Mostrar más"**: Aparece si hay más de 5 líneas
+   - Indica dinámicamente: `"📖 Mostrar más (18 líneas restantes)"`
+3. **Texto completo**: Al hacer clic, se expande y muestra toda la transcripción
+4. **Botón "📖 Mostrar menos"**: Después de expandir, permite volver a colapsar
+5. **Estado persistente**: El estado (expandido/colapsado) se mantiene mientras usas la app
+
+**Ventajas:**
+- ✅ Carga rápida de la interfaz
+- ✅ No abruma visualmente con textos muy largos
+- ✅ Acceso a contenido completo cuando lo necesitas
+- ✅ Interfaz limpia y organizada
+
 6. **En tiempo real**, verás notificaciones como:
    - "⏳ Analizando oportunidades automáticamente..."
    - "✅ Se han creado 3 tickets automáticamente"
@@ -996,7 +1044,26 @@ Ver `requirements.txt` para lista completa.
 
 ## 📋 Changelog
 
-### v1.2.0 - 🤖 Análisis Semántico de Oportunidades (Actual)
+### v1.2.1 - 🎨 Visualización Mejorada de Transcripciones (Actual)
+**Publicado: 2026**
+
+**✨ Nuevo:**
+- 🎭 **Transcripción con colores por persona** - Cada hablante tiene su propio color único y vibrante
+- 📖 **Sistema de expansión/colapso** - Muestra primeras 5 líneas, botón para expandir/colapsar
+- 🎨 **Paleta de 12 colores** - Rojo coral, Turquesa, Azul cielo, Verde menta, Púrpura, Amarillo...
+- 💅 **Diseño glassmorphism** - Línea de color a la izquierda + fondo semi-transparente
+- 📊 **Mejor legibilidad** - Excelente contraste para fondo oscuro de la app
+- 🚀 **Botón dinámico** - Indica dinámicamente cuántas líneas restantes ("Mostrar más 18 líneas")
+
+**Mejoras UI/UX:**
+- Interface más limpia y organizada
+- Carga rápida de transcripciones largas
+- Persistencia de estado (expandido/colapsado)
+- Accesibilidad mejorada con distinción por color
+
+---
+
+### v1.2.0 - 🤖 Análisis Semántico de Oportunidades
 **Publicado: 2025**
 
 **✨ Nuevo:**
@@ -1012,7 +1079,7 @@ Ver `requirements.txt` para lista completa.
 - Sección: **[🎫 Generación Automática de Tickets](#4️⃣-c-🤖-generación-automática-de-tickets-análisis-de-ia)**
 - Casos de uso real: **[Caso 3: Empresa de Consultoría](#-caso-3-empresa-de-consultoría---detección-automática-de-oportunidades)**
 
-### Comparativa: Antes vs. Ahora
+### Comparativa: v1.1 vs v1.2.0
 
 | Característica | v1.1 (Antes) | v1.2.0 (Ahora) |
 |---|---|---|
@@ -1023,8 +1090,6 @@ Ver `requirements.txt` para lista completa.
 | **Personalización** | Compleja | Simple (JSON) |
 | **Asignación speaker** | Manual | Automática (diarización) |
 | **Prioridades** | Manual | Automática según tema |
-
----
 
 ---
 
