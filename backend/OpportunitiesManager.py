@@ -483,8 +483,7 @@ Si no hay oportunidades: {{"analisis_completo": true, "oportunidades": []}}"""
                         "status": "new",
                         "priority": priority,
                         "notes": nota,
-                        "created_at": datetime.now().isoformat(),
-                        "mencionado_por": mencionado_por
+                        "created_at": datetime.now().isoformat()
                     }
                     
                     logger.debug(f"Opp {idx}: Datos preparados para insertar")
