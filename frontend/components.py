@@ -289,3 +289,75 @@ def render_empty_state(icon: str, message: str) -> None:
         <p style="font-size: 14px;">{message}</p>
     </div>
     ''', unsafe_allow_html=True)
+
+
+def render_colorful_transcription(transcription: str) -> None:
+    """
+    Renderiza la transcripción con colores diferentes para cada persona.
+    
+    Formato esperado:
+    Nombre: "texto..."
+    Otro Nombre: "más texto..."
+    
+    Args:
+        transcription: Texto completo de la transcripción
+    """
+    # Paleta de colores vibrantes y contrastantes para fondo oscuro
+    colors = [
+        "#FF6B6B",  # Rojo coral
+        "#4ECDC4",  # Turquesa
+        "#45B7D1",  # Azul cielo
+        "#FFA07A",  # Salmón claro
+        "#98D8C8",  # Verde menta
+        "#F7DC6F",  # Amarillo dorado
+        "#BB8FCE",  # Púrpura
+        "#85C1E2",  # Azul claro
+        "#F8B88B",  # Naranja claro
+        "#A8D8EA",  # Azul pastel
+        "#FF9FF3",  # Rosa
+        "#54A0FF",  # Azul brillante
+    ]
+    
+    # Diccionario para mapear personas a colores
+    speaker_colors = {}
+    color_index = 0
+    
+    # Parsear líneas y extraer nombres de personas
+    lines = transcription.split('\n')
+    html_content = '<div style="font-family: \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; padding: 20px; background: rgba(20, 30, 50, 0.5); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">'
+    
+    for line in lines:
+        if ':' in line:
+            # Separar nombre del contenido
+            parts = line.split(':', 1)
+            if len(parts) == 2:
+                speaker = parts[0].strip()
+                text = parts[1].strip()
+                
+                # Si es un nuevo hablante, asignarle color
+                if speaker not in speaker_colors:
+                    speaker_colors[speaker] = colors[color_index % len(colors)]
+                    color_index += 1
+                
+                color = speaker_colors[speaker]
+                
+                # Crear línea con nombre en color y texto normal
+                html_content += f'''
+                <div style="margin-bottom: 12px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-left: 4px solid {color}; border-radius: 4px;">
+                    <span style="color: {color}; font-weight: 700; font-size: 14px;">{speaker}:</span>
+                    <span style="color: rgba(255, 255, 255, 0.9); margin-left: 8px;">{text}</span>
+                </div>
+                '''
+            else:
+                # Si no hay ":", simplemente mostrar la línea
+                if line.strip():
+                    html_content += f'<div style="color: rgba(255, 255, 255, 0.7); margin-bottom: 8px;">{line}</div>'
+        else:
+            # Líneas sin ":" (líneas en blanco o texto sin speaker)
+            if line.strip():
+                html_content += f'<div style="color: rgba(255, 255, 255, 0.7); margin-bottom: 8px;">{line}</div>'
+    
+    html_content += '</div>'
+    
+    # Mostrar con Streamlit
+    st.markdown(html_content, unsafe_allow_html=True)

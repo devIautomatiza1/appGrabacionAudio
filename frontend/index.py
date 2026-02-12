@@ -18,6 +18,7 @@ logger = get_logger(__name__)
 from AudioRecorder import AudioRecorder
 import styles
 import components
+from components import render_colorful_transcription
 from notifications import (
     show_success, show_error, show_warning, show_info,
     show_success_expanded, show_error_expanded, show_info_expanded, show_warning_expanded,
@@ -643,9 +644,9 @@ if st.session_state.get("chat_enabled", False) and st.session_state.get("context
     
     st.header("Transcripción del Audio")
     
-    # Mostrar transcripción en un contenedor
+    # Mostrar transcripción con colores por persona
     with st.container(border=True):
-        st.text_area("", st.session_state.contexto, height=200, disabled=True, label_visibility="collapsed")
+        render_colorful_transcription(st.session_state.contexto)
     
     # Botones de acción para transcripción
     col_trans1, col_trans2, col_trans3 = st.columns(3)
