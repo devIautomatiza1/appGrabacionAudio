@@ -263,6 +263,7 @@ class OpportunitiesManager:
             
             # Extraer speakers de la transcripción
             speakers = self.extract_speakers_from_transcription(transcription)
+            logger.info(f"Speakers detectados: {list(speakers.keys())}")
             
             # Preparar lista de temas
             temas = keywords_dict.get("temas_de_interes", {})
@@ -272,134 +273,133 @@ class OpportunitiesManager:
                 logger.warning("No topics found in keywords dict")
                 return 0, []
             
-            # Construir prompt para Gemini
-            temas_list = "\n".join([
-                f"  - {tema}: ({datos.get('prioridad', 'medium').upper()}) {datos.get('descripcion', '')}"
-                for tema, datos in temas.items()
-            ])
-            
             speakers_list = ", ".join(speakers.keys())
             
-            # Limitar transcripción a 10000 caracteres para evitar límites de Gemini
-            transcription_limited = transcription[:10000] if len(transcription) > 10000 else transcription
-            if len(transcription) > 10000:
-                logger.info(f"Transcription truncated from {len(transcription)} to 10000 chars")
+            # Limitar transcripción si es necesario
+            transcription_limited = transcription[:12000] if len(transcription) > 12000 else transcription
             
-            prompt = f"""Eres un Analista Empresarial Experto en análisis de reuniones. Tu tarea es detectar INTENCIONES Y CONCEPTOS, no solo palabras clave exactas.
+            # PROMPT EXTREMADAMENTE DIRECTO
+            prompt = f"""CRÍTICO: Analiza esta conversación/reunión palabra por palabra. Detecta TODAS las oportunidades que encuentres.
 
-===== TEMAS A BUSCAR =====
-{temas_list}
+MAPEO SIMPLE:
+• Presupuesto / dinero / gasto / inversión / coste → "Presupuesto" (HIGH)
+• Contactar / llamar / tarea / acción / hacer / pendiente / debe / responsabilidad → "Acción requerida" (HIGH)
+• Regulación / ley / cumplimiento / compliance / auditoría / riesgo legal → "Cumplimiento Legal" (HIGH)
+• Formación / capacitación / entrenamiento / curso / educación → "Formación" (MEDIUM)
+• Contratar / empleado / personal / equipo / rol / recurso humano → "Recursos Humanos" (MEDIUM)
+• Cliente / venta / deal / contrato / negocio / oportunidad / acuerdo → "Cierre de venta" (HIGH)
+• Decisión / cambio / estrategia / importante / aprobado → "Decisión importante" (HIGH)
+• Herramienta / infraestructura / sistema / plataforma / equipo tecnológico → "Infraestructura" (MEDIUM)
 
-===== TRANSCRIPCIÓN A ANALIZAR =====
+TRANSCRIPCIÓN:
 {transcription_limited}
 
-===== PARTICIPANTES EN LA REUNIÓN =====
-{speakers_list}
+SPEAKERS: {speakers_list}
 
-===== INSTRUCCIONES CRÍTICAS =====
-1. NO busques solo coincidencias textuales exactas
-2. Busca INTENCIONES detrás de las palabras
-3. Ejemplo: "Necesitamos recursos para el proyecto" → Busca "Infraestructura" o "Acción requerida"
-4. Si detectas algo relacionado con los temas, DEBES reportarlo
-5. Para cada oportunidad, identifica quién lo dijo usando los participantes
-6. Devuelve SOLO JSON válido, sin explicaciones adicionales
+RESPONDE SOLO CON JSON (sin markdown, sin explicaciones):
 
-===== FORMATO DE RESPUESTA (SOLO JSON) =====
-{{
-  "oportunidades": [
-    {{
-      "tema": "Nombre exacto del tema del diccionario",
-      "prioridad": "high|medium|low",
-      "mencionado_por": "Nombre del participante",
-      "contexto": "La frase exacta con contexto",
-      "confianza": 0.95
-    }}
-  ]
-}}
+{{"analisis_completo": true, "oportunidades": [{{"tema": "TemaExacto", "prioridad": "high/medium/low", "mencionado_por": "Nombre", "contexto": "frase", "confianza": 0.85}}]}}
 
-Si no encuentras oportunidades: {{"oportunidades": []}}"""
+Si no hay oportunidades: {{"analisis_completo": true, "oportunidades": []}}"""
             
             # Llamar a Gemini
-            logger.debug(f"Iniciando análisis con Gemini para {audio_filename}...")
+            logger.info(f"🔄 Iniciando análisis con Gemini para: {audio_filename}")
             model = genai.GenerativeModel(config.get("modelo_gemini", "gemini-1.5-flash"))
             response = model.generate_content(prompt)
             response_text = response.text.strip()
             
-            logger.debug(f"Respuesta Gemini recibida: {len(response_text)} caracteres")
+            logger.debug(f"Respuesta Gemini ({len(response_text)} chars): {response_text[:200]}")
             
-            # Remover markdown code blocks si existen
-            if response_text.startswith("```"):
-                response_text = response_text.split("```")[1]
-                if response_text.startswith("json"):
-                    response_text = response_text[4:]
-            if response_text.endswith("```"):
-                response_text = response_text[:-3]
+            # Limpiar respuesta
+            # Remover markdown code blocks
+            if "```json" in response_text:
+                response_text = response_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in response_text:
+                response_text = response_text.split("```")[1].split("```")[0].strip()
+            
+            # Remover caracteres de control
             response_text = response_text.strip()
             
-            # Parsear respuesta JSON
+            # Parsear JSON
             try:
                 response_json = json.loads(response_text)
+                logger.debug(f"JSON parseado exitosamente")
             except json.JSONDecodeError as e:
-                logger.error(f"Error parsing Gemini response: {str(e)[:100]}")
-                logger.debug(f"Response text: {response_text[:300]}")
-                return 0, []
+                logger.error(f"❌ Error parsing JSON: {str(e)}")
+                logger.debug(f"Response text: {response_text}")
+                # Intentar limpiar y reparsear
+                try:
+                    # Buscar el primer { y último }
+                    start = response_text.find("{")
+                    end = response_text.rfind("}") + 1
+                    if start >= 0 and end > start:
+                        cleaned = response_text[start:end]
+                        response_json = json.loads(cleaned)
+                        logger.info("✓ JSON recuperado tras limpieza")
+                    else:
+                        logger.error("No se encontró JSON válido")
+                        return 0, []
+                except:
+                    logger.error("No se pudo recuperar JSON")
+                    return 0, []
             
             oportunidades_data = response_json.get("oportunidades", [])
-            if not oportunidades_data:
-                logger.info(f"✓ No opportunities detected by AI for {audio_filename}")
-                return 0, []
+            logger.info(f"IA detectó {len(oportunidades_data)} oportunidades")
             
-            logger.info(f"IA detectó {len(oportunidades_data)} oportunidades potenciales")
+            if not oportunidades_data:
+                logger.info(f"✓ Análisis completado: 0 oportunidades detectadas")
+                return 0, []
             
             # Obtener recording_id
             recording_id = self.get_recording_id(audio_filename)
             if not recording_id:
-                logger.warning(f"Recording ID not found for {audio_filename}")
+                logger.warning(f"Recording ID not found para {audio_filename}")
                 return 0, []
             
-            # Guardar cada oportunidad en Supabase
+            # Guardar cada oportunidad
             saved_opportunities = []
             for idx, opp in enumerate(oportunidades_data, 1):
                 try:
-                    # Validar confianza mínima
-                    confianza = float(opp.get("confianza", 0.7))
-                    min_confianza = float(config.get("minimo_confianza", 0.7))
+                    tema = str(opp.get("tema", "")).strip()
+                    mencionado_por = str(opp.get("mencionado_por", "Unknown")).strip()
+                    contexto = str(opp.get("contexto", "")).strip()
+                    confianza = float(opp.get("confianza", 0.8))
+                    prioridad_str = str(opp.get("prioridad", "medium")).lower().strip()
                     
-                    if confianza < min_confianza:
-                        logger.debug(f"Opportunity {idx}: Confianza {confianza:.2f} < {min_confianza:.2f}, skipped")
-                        continue
-                    
-                    # Validar que el tema existe en el diccionario
-                    tema = opp.get("tema", "").strip()
+                    # Validar tema
                     if tema not in temas:
-                        logger.warning(f"Opportunity {idx}: Tema '{tema}' not in dictionary, skipped")
+                        logger.warning(f"Tema '{tema}' no está en diccionario. Temas válidos: {list(temas.keys())}")
                         continue
                     
-                    mencionado_por = opp.get("mencionado_por", "Unknown").strip()
-                    contexto = opp.get("contexto", "").strip()
+                    # Validar confianza
+                    min_confianza = float(config.get("minimo_confianza", 0.5))
+                    if confianza < min_confianza:
+                        logger.debug(f"Opp {idx}: Confianza {confianza:.2f} < {min_confianza:.2f}")
+                        continue
                     
-                    # Construir nota descriptiva
-                    tema_data = temas.get(tema, {})
-                    nota = f"🤖 Ticket generado automáticamente por IA\n\n"
-                    nota += f"Concepto detectado: {tema}\n"
-                    nota += f"Descripción: {tema_data.get('descripcion', '')}\n\n"
-                    nota += f"Mencionado por: {mencionado_por}\n"
-                    nota += f"Contexto: {contexto}\n"
-                    nota += f"Confianza: {confianza:.0%}"
+                    if not contexto:
+                        logger.warning(f"Opp {idx}: Sin contexto")
+                        continue
                     
                     # Mapear prioridades
-                    priority_map = {
-                        "high": "High",
-                        "medium": "Medium",
-                        "low": "Low"
-                    }
+                    priority_map = {"high": "High", "medium": "Medium", "low": "Low"}
+                    priority = priority_map.get(prioridad_str, "Medium")
+                    
+                    # Construir nota
+                    tema_data = temas.get(tema, {})
+                    nota = f"🤖 TICKET GENERADO AUTOMÁTICAMENTE\n\n"
+                    nota += f"📌 Tema: {tema}\n"
+                    nota += f"📝 Descripción: {tema_data.get('descripcion', '')}\n"
+                    nota += f"👤 Mencionado por: {mencionado_por}\n"
+                    nota += f"💬 Contexto: {contexto}\n"
+                    nota += f"🎯 Confianza: {confianza:.0%}"
                     
                     opportunity_data = {
                         "recording_id": recording_id,
-                        "title": f"{tema} - {mencionado_por}",
+                        "title": f"[IA] {tema} - {mencionado_por}",
                         "description": contexto,
                         "status": "new",
-                        "priority": priority_map.get(opp.get("prioridad", "medium").lower(), "Medium"),
+                        "priority": priority,
                         "notes": nota,
                         "created_at": datetime.now().isoformat(),
                         "mencionado_por": mencionado_por
@@ -410,21 +410,23 @@ Si no encuentras oportunidades: {{"oportunidades": []}}"""
                         result = self.db.table("opportunities").insert(opportunity_data).execute()
                         if result.data:
                             opp_id = result.data[0].get("id")
-                            logger.info(f"✅ Oportunidad {idx} guardada: {opp_id} ({tema})")
+                            logger.info(f"✅ Opp {idx} guardada: {opp_id} (Tema: {tema}, Por: {mencionado_por})")
                             saved_opportunities.append(result.data[0])
                         else:
-                            logger.warning(f"Oportunidad {idx}: Empty response from Supabase")
+                            logger.warning(f"Opp {idx}: Respuesta vacía de Supabase")
                     else:
-                        logger.warning("DB unavailable, opportunity not saved")
+                        logger.warning("DB no disponible")
                 
                 except Exception as inner_e:
-                    logger.error(f"Error guardando oportunidad {idx}: {type(inner_e).__name__} - {str(inner_e)}")
-                    continue
+                    logger.error(f"Error guardando opp {idx}: {type(inner_e).__name__} - {str(inner_e)}")
             
-            logger.info(f"✅ Análisis completado: {len(saved_opportunities)}/{len(oportunidades_data)} oportunidades guardadas")
-            return len(saved_opportunities), saved_opportunities
+            total = len(saved_opportunities)
+            logger.info(f"✅ ANÁLISIS COMPLETADO: {total} oportunidades guardadas de {len(oportunidades_data)} detectadas")
+            return total, saved_opportunities
         
         except Exception as e:
             logger.error(f"analyze_opportunities_with_ai error: {type(e).__name__} - {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return 0, []
 

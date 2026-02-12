@@ -42,9 +42,9 @@
     }
   },
   "configuracion": {
-    "modelo_gemini": "gemini-1.5-flash",
+    "modelo_gemini": "gemini-2.0-flash",
     "idioma_analisis": "es",
     "detectar_intenciones": true,
-    "minimo_confianza": 0.7
+    "minimo_confianza": 0.5
   }
 }
