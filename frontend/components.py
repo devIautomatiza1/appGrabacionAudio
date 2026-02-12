@@ -474,12 +474,12 @@ def render_colorful_transcription(transcription: str) -> None:
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button(f"📖 Ver Transcripción Completa", use_container_width=True, key="expand_transcript"):
+            if st.button(f"Ver Transcripción Completa", use_container_width=True, key="expand_transcript"):
                 st.session_state.transcript_expanded = True
                 st.rerun()
         
         # Info de líneas restantes
-        st.caption(f"📄 {remaining} líneas más disponibles")
+        st.caption(f"{remaining} líneas más disponibles")
     else:
         # Mostrar todo
         html_content = '<div style="font-family:\'Segoe UI\',Tahoma,Geneva,Verdana,sans-serif;line-height:1.8;padding:20px;background:rgba(20,30,50,0.5);border-radius:12px;border:1px solid rgba(255,255,255,0.1);">'
@@ -492,6 +492,6 @@ def render_colorful_transcription(transcription: str) -> None:
             st.markdown(css_styles, unsafe_allow_html=True)
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
-                if st.button(f"📖 Ver Solo Resumen", use_container_width=True, key="collapse_transcript"):
+                if st.button(f"Ver Menos", use_container_width=True, key="collapse_transcript"):
                     st.session_state.transcript_expanded = False
                     st.rerun()
