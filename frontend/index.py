@@ -513,6 +513,9 @@ with col_right:
                     display_name = format_recording_name(recording)
                     is_transcribed = is_audio_transcribed(recording, db_utils)
                     transcribed_badge = components.render_badge("Transcrito", "transcribed") if is_transcribed else ""
+                    
+                    # Verificar si este audio está siendo editado
+                    if st.session_state.editing_audio == recording:
                         # Modo edición: input + botones confirmación
                         col_input, col_confirm, col_cancel = st.columns([0.75, 0.125, 0.125])
                         
