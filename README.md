@@ -925,11 +925,30 @@ id: UUID
 recording_id: UUID
 title: String
 description: Text
-priority: String (high/medium/low)
-status: String (open/progress/closed)
+priority: String (Low/Medium/High) - Default: 'Medium'
+status: String (new/in_progress/closed/won) - Default: 'Open'
+notes: Text
+ticket_number: Integer
 created_at: Timestamp
 updated_at: Timestamp
 ```
+
+#### 📋 Tipos de Estado (Status)
+Se guardan como texto en Supabase:
+- `"new"` - Nuevo
+- `"in_progress"` - En progreso
+- `"closed"` - Cerrado
+- `"won"` - Ganado
+
+**Valor por defecto:** `'Open'`
+
+#### 🎯 Tipos de Prioridad (Priority)
+Se guardan como texto en Supabase:
+- `"Low"` - Baja
+- `"Medium"` - Media
+- `"High"` - Alta
+
+**Valor por defecto:** `'Medium'`
 
 ---
 
